@@ -1,0 +1,44 @@
+# --- Python & Build ---
+__pycache__/
+*.py[cod]
+*$py.class
+build/
+dist/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+.mypy_cache/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# --- Virtual Environments ---
+.venv/
+venv/
+ENV/
+env/
+
+# --- Environment & Secrets (ВАЖНО) ---
+.env
+.env.*
+.flaskenv
+instance/
+
+# --- Logs & Databases ---
+*.log
+*.sqlite3
+
+# --- Testing & Coverage ---
+.tox/
+.nox/
+.coverage
+.coverage.*
+htmlcov/
+
+# --- Editors (PyCharm, VS Code, OS) ---
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
