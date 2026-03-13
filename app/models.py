@@ -21,6 +21,7 @@ class Department(SQLModel, table=True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     name: str
     code: str = Field(unique=True)
+    faculty_name: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 
@@ -32,6 +33,7 @@ class Student(SQLModel, table=True):
     first_name: str
     last_name: str
     student_card_id: str = Field(unique=True)
+    student_id_num: str = Field(unique=True)
     department_id: UUID = Field(foreign_key='departments.id')
 
 
@@ -73,6 +75,7 @@ class UserSkill(SQLModel, table=True):
 
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     user_id: UUID = Field(foreign_key='user.id')
+    student_id: UUID = Field(foreign_key='students.id')
     skill_id: UUID = Field(foreign_key='skills.id')
     proficiency: int
     evidence_url: Optional[str] = None
@@ -85,6 +88,7 @@ class TopicSkill(SQLModel, table=True):
     topic_id: UUID = Field(foreign_key='topics.id')
     skill_id: UUID = Field(foreign_key='skills.id')
     is_required: bool
+    min_level: Optional[int] = None
 
 
 class Application(SQLModel, table=True):
@@ -93,6 +97,7 @@ class Application(SQLModel, table=True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     topic_id: UUID = Field(foreign_key='topics.id')
     user_id: UUID = Field(foreign_key='user.id')
+    student_id: UUID = Field(foreign_key='students.id')
     status: str
     motivation_letter: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)

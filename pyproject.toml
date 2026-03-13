@@ -74,7 +74,10 @@ dependencies = [
     "sqlmodel>=0.0.37",
     "ruff>=0.15.5",
     "pre-commit>=4.5.1",
-    "websockets==16.0"
+    "websockets==16.0",
+    "sqlmodel>=0.0.37",
+    "ruff>=0.15.5",
+    "pre-commit>=4.5.1",
 ]
 
 [tool.ruff]
