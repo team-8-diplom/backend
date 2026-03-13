@@ -1,7 +1,7 @@
 Backend part project
 
 to start on root project:
-```commandline
+```bash
 uv run uvicorn app.main:app --reload
 
 ```
