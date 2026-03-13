@@ -86,7 +86,6 @@ class TopicSkill(SQLModel, table=True):
     topic_id: UUID = Field(foreign_key='topics.id')
     skill_id: UUID = Field(foreign_key='skills.id')
     is_required: bool
-    min_level: Optional[int] = None
 
 
 class Application(SQLModel, table=True):
