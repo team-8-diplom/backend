@@ -73,7 +73,7 @@ class UserSkill(SQLModel, table=True):
     __tablename__ = 'user_skills'
 
     id: UUID = Field(default_factory=uuid4, primary_key=True)
-    student_id: UUID = Field(foreign_key='students.id')
+    user_id: UUID = Field(foreign_key='user.id')
     skill_id: UUID = Field(foreign_key='skills.id')
     proficiency: int
     evidence_url: Optional[str] = None
@@ -93,7 +93,7 @@ class Application(SQLModel, table=True):
 
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     topic_id: UUID = Field(foreign_key='topics.id')
-    student_id: UUID = Field(foreign_key='students.id')
+    user_id: UUID = Field(foreign_key='user.id')
     status: str
     motivation_letter: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
