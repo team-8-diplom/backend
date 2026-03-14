@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 
-app = FastAPI(title="Team 8 Project", version="0.1.0")
+app = FastAPI(title='Team 8 Project', version='0.1.0')
+
 
 @app.get('/')
 async def read_root() -> dict[str, str]:
