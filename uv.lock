@@ -517,6 +517,15 @@ wheels = [
 ]
 
 [[package]]
+name = "python-generics"
+version = "0.2.4"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/b5/04/f9297d0da5a68565549cf60ab2c9523dd664fd3715778b09b77ff6d323de/python_generics-0.2.4.tar.gz", hash = "sha256:9243a269ef325552efb193f83eefe0431edbce78514cca0c8b4f1d57a2c31b20", size = 12770, upload-time = "2025-11-04T18:39:59.82Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ee/59/fabba6cc1d196ab650691bbf83882cc28665868819a294a2025926bddbc6/python_generics-0.2.4-py3-none-any.whl", hash = "sha256:c0d4bad282223a1ae9034c8988eb9730dfa08978c2b569c175dfa83d60ee088a", size = 7318, upload-time = "2025-11-04T18:39:58.48Z" },
+]
+
+[[package]]
 name = "pyyaml"
 version = "6.0.3"
 source = { registry = "https://pypi.org/simple" }
@@ -664,6 +673,7 @@ dependencies = [
     { name = "pydantic-settings" },
     { name = "pyjwt" },
     { name = "python-dotenv" },
+    { name = "python-generics" },
     { name = "pyyaml" },
     { name = "ruff" },
     { name = "sqlalchemy" },
@@ -706,6 +716,7 @@ requires-dist = [
     { name = "pyjwt", specifier = "==2.11.0" },
     { name = "pyjwt", specifier = ">=2.11.0" },
     { name = "python-dotenv", specifier = "==1.2.1" },
+    { name = "python-generics", specifier = ">=0.2.4" },
     { name = "pyyaml", specifier = "==6.0.3" },
     { name = "ruff", specifier = ">=0.15.5" },
     { name = "sqlalchemy", specifier = "==2.0.46" },
