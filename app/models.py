@@ -31,7 +31,7 @@ class Student(SQLModel, table=True):
     user_id: UUID = Field(foreign_key='users.id', unique=True)
     first_name: str
     last_name: str
-    student_id_num: str = Field(unique=True)
+    student_card_id: str = Field(unique=True)
     department_id: UUID = Field(foreign_key='departments.id')
 
 
