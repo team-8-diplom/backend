@@ -13,7 +13,6 @@ class Skill(Base, table=True):
     name: str = Field(unique=True)
     category: Optional[str] = None
     code: Optional[str] = Field(default=None, unique=True)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
 
 
 class SkillCreate(SQLModel):
@@ -22,7 +21,7 @@ class SkillCreate(SQLModel):
     code: Optional[str] = None
 
 
-class SkillUpdate(SQLModel):
+class SkillUpdate(SkillCreate):
     name: Optional[str] = None
     category: Optional[str] = None
     code: Optional[str] = None

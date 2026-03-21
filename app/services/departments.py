@@ -13,6 +13,9 @@ class DepartmentService:
     async def get(self, department_id: UUID) -> Optional[Department]:
         return await self.__repository.get(department_id)
 
+    async def get_all(self) -> Sequence[Department]:
+        return await self.__repository.fetch()
+
     async def create(self, data: DepartmentCreate) -> Department:
         department = Department(**data.model_dump())
         return await self.__repository.save(department)

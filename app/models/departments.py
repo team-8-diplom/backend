@@ -12,7 +12,6 @@ class Department(Base, table=True):
 
     name: str
     code: str = Field(unique=True)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
 
 
 class DepartmentCreate(SQLModel):
@@ -20,7 +19,7 @@ class DepartmentCreate(SQLModel):
     code: str
 
 
-class DepartmentUpdate(SQLModel):
+class DepartmentUpdate(DepartmentCreate):
     name: Optional[str] = None
     code: Optional[str] = None
 

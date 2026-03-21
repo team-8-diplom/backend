@@ -15,6 +15,9 @@ class UserSkillService:
     async def get(self, user_skill_id: UUID) -> Optional[UserSkill]:
         return await self.__repository.get(user_skill_id)
 
+    async def get_all(self) -> Sequence[UserSkill]:
+        return await self.__repository.fetch()
+
     async def create(self, data: UserSkillCreate) -> UserSkill:
         user_skill = UserSkill(**data.model_dump())
         return await self.__repository.save(user_skill)

@@ -1,21 +1,35 @@
 from fastapi import FastAPI, APIRouter
 
-from app.routers import users, applications, departments, saved_topics, skills, students, teachers, topic_skills, \
-    topics, user_skills
+from app.routers import (
+    users,
+    applications,
+    departments,
+    saved_topics,
+    skills,
+    students,
+    teachers,
+    topic_skills,
+    topics,
+    user_skills,
+)
 
 app = FastAPI(title='Team 8 Project', version='0.1.0')
 
-app_router = APIRouter(prefix="/appv1")
-app_router.include_router(users.router)
-app_router.include_router(applications.router)
-app_router.include_router(departments.router)
-app_router.include_router(saved_topics.router)
-app_router.include_router(skills.router)
-app_router.include_router(students.router)
-app_router.include_router(teachers.router)
-app_router.include_router(topic_skills.router)
-app_router.include_router(topics.router)
-app_router.include_router(user_skills.router)
+api_router = APIRouter(prefix="/api/v1")
+
+api_router.include_router(users.router)
+api_router.include_router(applications.router)
+api_router.include_router(departments.router)
+api_router.include_router(saved_topics.router)
+api_router.include_router(skills.router)
+api_router.include_router(students.router)
+api_router.include_router(teachers.router)
+api_router.include_router(topic_skills.router)
+api_router.include_router(topics.router)
+api_router.include_router(user_skills.router)
+
+app.include_router(api_router)
+
 
 @app.get('/')
 async def read_root() -> dict[str, str]:
@@ -25,17 +39,8 @@ async def read_root() -> dict[str, str]:
 
 @app.get('/items/{item_id}')
 async def read_item(item_id: int, q: str | None = None) -> dict:
-    """Получение элемента по ID.
-
-    Args:
-        item_id: Идентификатор элемента
-        q: Опциональный параметр запроса
-
-    Returns:
-        Словарь с данными элемента
-    """
+    """Получение элемента по ID."""
     response = {'item_id': item_id}
     if q:
         response['q'] = q
     return response
-

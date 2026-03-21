@@ -14,6 +14,9 @@ class ApplicationService:
     async def get(self, application_id: UUID) -> Optional[Application]:
         return await self.__repository.get(application_id)
 
+    async def get_all(self) -> Sequence[Application]:
+        return await self.__repository.fetch()
+
     async def create(self, data: ApplicationCreate) -> Application:
         application = Application(**data.model_dump())
         return await self.__repository.save(application)

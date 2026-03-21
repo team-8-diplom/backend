@@ -20,7 +20,7 @@ class TopicSkillCreate(SQLModel):
     is_required: bool
 
 
-class TopicSkillUpdate(SQLModel):
+class TopicSkillUpdate(TopicSkillCreate):
     topic_id: Optional[UUID] = None
     skill_id: Optional[UUID] = None
     is_required: Optional[bool] = None

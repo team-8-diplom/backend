@@ -22,7 +22,7 @@ class UserSkillCreate(SQLModel):
     evidence_url: Optional[str] = None
 
 
-class UserSkillUpdate(SQLModel):
+class UserSkillUpdate(UserSkillCreate):
     user_id: Optional[UUID] = None
     skill_id: Optional[UUID] = None
     proficiency: Optional[int] = None
