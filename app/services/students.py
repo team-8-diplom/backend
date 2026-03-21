@@ -15,6 +15,9 @@ class StudentService:
     async def get(self, student_id: UUID) -> Optional[Student]:
         return await self.__repository.get(student_id)
 
+    async def get_all(self) -> Sequence[Student]:
+        return await self.__repository.fetch()
+
     async def create(self, data: StudentCreate) -> Student:
         student = Student(**data.model_dump())
         return await self.__repository.save(student)

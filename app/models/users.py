@@ -13,7 +13,6 @@ class User(Base, table=True):
     email: str = Field(index=True, unique=True, max_length=255)
     password_hash: str
     role: str
-    created_at: datetime = Field(default_factory=datetime.utcnow)
 
 
 class UserCreate(SQLModel):
@@ -22,7 +21,7 @@ class UserCreate(SQLModel):
     role: str
 
 
-class UserUpdate(SQLModel):
+class UserUpdate(UserCreate):
     email: Optional[str] = Field(default=None, max_length=255)
     password_hash: Optional[str] = None
     role: Optional[str] = None

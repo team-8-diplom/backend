@@ -14,7 +14,6 @@ class Application(Base, table=True):
     user_id: UUID = Field(foreign_key='users.id')
     status: str
     motivation_letter: Optional[str] = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
 
 
 class ApplicationCreate(SQLModel):
@@ -24,7 +23,7 @@ class ApplicationCreate(SQLModel):
     motivation_letter: Optional[str] = None
 
 
-class ApplicationUpdate(SQLModel):
+class ApplicationUpdate(ApplicationCreate):
     topic_id: Optional[UUID] = None
     user_id: Optional[UUID] = None
     status: Optional[str] = None

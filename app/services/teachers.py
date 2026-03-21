@@ -15,6 +15,9 @@ class TeacherService:
     async def get(self, teacher_id: UUID) -> Optional[Teacher]:
         return await self.__repository.get(teacher_id)
 
+    async def get_all(self) -> Sequence[Teacher]:
+        return await self.__repository.fetch()
+
     async def create(self, data: TeacherCreate) -> Teacher:
         teacher = Teacher(**data.model_dump())
         return await self.__repository.save(teacher)

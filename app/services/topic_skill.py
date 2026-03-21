@@ -14,6 +14,9 @@ class TopicSkillService:
     async def get(self, topic_skill_id: UUID) -> Optional[TopicSkill]:
         return await self.__repository.get(topic_skill_id)
 
+    async def get_all(self) -> Sequence[TopicSkill]:
+        return await self.__repository.fetch()
+
     async def create(self, data: TopicSkillCreate) -> TopicSkill:
         topic_skill = TopicSkill(**data.model_dump())
         return await self.__repository.save(topic_skill)

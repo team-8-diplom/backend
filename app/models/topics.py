@@ -26,7 +26,7 @@ class TopicCreate(SQLModel):
     max_students: int
 
 
-class TopicUpdate(SQLModel):
+class TopicUpdate(TopicCreate):
     teacher_id: Optional[UUID] = None
     title: Optional[str] = None
     description: Optional[str] = None

@@ -24,7 +24,7 @@ class TeacherCreate(SQLModel):
     department_id: UUID
 
 
-class TeacherUpdate(SQLModel):
+class TeacherUpdate(TeacherCreate):
     user_id: Optional[UUID] = None
     first_name: Optional[str] = None
     last_name: Optional[str] = None

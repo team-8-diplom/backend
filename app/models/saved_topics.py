@@ -12,7 +12,6 @@ class SavedTopic(Base, table=True):
 
     student_id: UUID = Field(foreign_key='students.id')
     topic_id: UUID = Field(foreign_key='topics.id')
-    created_at: datetime = Field(default_factory=datetime.utcnow)
 
 
 class SavedTopicCreate(SQLModel):
@@ -20,7 +19,7 @@ class SavedTopicCreate(SQLModel):
     topic_id: UUID
 
 
-class SavedTopicUpdate(SQLModel):
+class SavedTopicUpdate(SavedTopicCreate):
     student_id: Optional[UUID] = None
     topic_id: Optional[UUID] = None
 
