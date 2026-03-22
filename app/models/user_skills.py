@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
@@ -23,10 +24,7 @@ class UserSkillCreate(SQLModel):
 
 
 class UserSkillUpdate(UserSkillCreate):
-    user_id: Optional[UUID] = None
-    skill_id: Optional[UUID] = None
-    proficiency: Optional[int] = None
-    evidence_url: Optional[str] = None
+    pass
 
 
 class UserSkillPublic(SQLModel):
@@ -35,3 +33,5 @@ class UserSkillPublic(SQLModel):
     skill_id: UUID
     proficiency: int
     evidence_url: Optional[str]
+    created_at: datetime
+    updated_at: datetime

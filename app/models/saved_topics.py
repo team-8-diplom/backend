@@ -20,12 +20,11 @@ class SavedTopicCreate(SQLModel):
 
 
 class SavedTopicUpdate(SavedTopicCreate):
-    student_id: Optional[UUID] = None
-    topic_id: Optional[UUID] = None
-
+    pass
 
 class SavedTopicPublic(SQLModel):
     id: UUID
     student_id: UUID
     topic_id: UUID
     created_at: datetime
+    updated_at: datetime

@@ -24,10 +24,7 @@ class ApplicationCreate(SQLModel):
 
 
 class ApplicationUpdate(ApplicationCreate):
-    topic_id: Optional[UUID] = None
-    user_id: Optional[UUID] = None
-    status: Optional[str] = None
-    motivation_letter: Optional[str] = None
+    pass
 
 
 class ApplicationPublic(SQLModel):
@@ -37,3 +34,4 @@ class ApplicationPublic(SQLModel):
     status: str
     motivation_letter: Optional[str]
     created_at: datetime
+    updated_at: datetime

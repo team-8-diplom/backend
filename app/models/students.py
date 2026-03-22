@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
@@ -25,11 +26,7 @@ class StudentCreate(SQLModel):
 
 
 class StudentUpdate(StudentCreate):
-    user_id: Optional[UUID] = None
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
-    student_card_id: Optional[str] = None
-    department_id: Optional[UUID] = None
+    pass
 
 
 class StudentPublic(SQLModel):
@@ -39,3 +36,5 @@ class StudentPublic(SQLModel):
     last_name: str
     student_card_id: str
     department_id: UUID
+    created_at: datetime
+    updated_at: datetime
