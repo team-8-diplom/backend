@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
@@ -21,9 +22,7 @@ class TopicSkillCreate(SQLModel):
 
 
 class TopicSkillUpdate(TopicSkillCreate):
-    topic_id: Optional[UUID] = None
-    skill_id: Optional[UUID] = None
-    is_required: Optional[bool] = None
+    pass
 
 
 class TopicSkillPublic(SQLModel):
@@ -31,3 +30,5 @@ class TopicSkillPublic(SQLModel):
     topic_id: UUID
     skill_id: UUID
     is_required: bool
+    created_at: datetime
+    updated_at: datetime

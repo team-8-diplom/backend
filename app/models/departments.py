@@ -20,8 +20,7 @@ class DepartmentCreate(SQLModel):
 
 
 class DepartmentUpdate(DepartmentCreate):
-    name: Optional[str] = None
-    code: Optional[str] = None
+    pass
 
 
 class DepartmentPublic(SQLModel):
@@ -29,3 +28,4 @@ class DepartmentPublic(SQLModel):
     name: str
     code: str
     created_at: datetime
+    updated_at: datetime

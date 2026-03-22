@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
@@ -27,12 +28,7 @@ class TopicCreate(SQLModel):
 
 
 class TopicUpdate(TopicCreate):
-    teacher_id: Optional[UUID] = None
-    title: Optional[str] = None
-    description: Optional[str] = None
-    department_id: Optional[UUID] = None
-    status: Optional[str] = None
-    max_students: Optional[int] = None
+    pass
 
 
 class TopicPublic(SQLModel):
@@ -43,3 +39,5 @@ class TopicPublic(SQLModel):
     department_id: UUID
     status: str
     max_students: int
+    created_at: datetime
+    updated_at: datetime

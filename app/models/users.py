@@ -22,9 +22,7 @@ class UserCreate(SQLModel):
 
 
 class UserUpdate(UserCreate):
-    email: Optional[str] = Field(default=None, max_length=255)
-    password_hash: Optional[str] = None
-    role: Optional[str] = None
+    pass
 
 
 class UserPublic(SQLModel):
@@ -32,3 +30,4 @@ class UserPublic(SQLModel):
     email: str
     role: str
     created_at: datetime
+    updated_at: datetime

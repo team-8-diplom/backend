@@ -22,9 +22,7 @@ class SkillCreate(SQLModel):
 
 
 class SkillUpdate(SkillCreate):
-    name: Optional[str] = None
-    category: Optional[str] = None
-    code: Optional[str] = None
+    pass
 
 
 class SkillPublic(SQLModel):
@@ -33,3 +31,4 @@ class SkillPublic(SQLModel):
     category: Optional[str]
     code: Optional[str]
     created_at: datetime
+    updated_at: datetime
