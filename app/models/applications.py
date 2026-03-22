@@ -1,4 +1,3 @@
-from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
@@ -7,31 +6,24 @@ from sqlmodel import Field, SQLModel
 from .base import Base
 
 
-class Application(Base, table=True):
-    __tablename__ = 'applications'
-
+class ApplicationBase(SQLModel):
     topic_id: UUID = Field(foreign_key='topics.id')
     user_id: UUID = Field(foreign_key='users.id')
     status: str
     motivation_letter: Optional[str] = None
 
 
-class ApplicationCreate(SQLModel):
-    topic_id: UUID
-    user_id: UUID
-    status: str
-    motivation_letter: Optional[str] = None
+class ApplicationCreate(ApplicationBase):
+    pass
 
 
 class ApplicationUpdate(ApplicationCreate):
     pass
 
 
-class ApplicationPublic(SQLModel):
-    id: UUID
-    topic_id: UUID
-    user_id: UUID
-    status: str
-    motivation_letter: Optional[str]
-    created_at: datetime
-    updated_at: datetime
+class ApplicationPublic(ApplicationBase, Base):
+    pass
+
+
+class Application(ApplicationPublic, table=True):
+    __tablename__ = 'applications'

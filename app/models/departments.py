@@ -1,4 +1,3 @@
-from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
@@ -7,25 +6,22 @@ from sqlmodel import Field, SQLModel
 from .base import Base
 
 
-class Department(Base, table=True):
-    __tablename__ = 'departments'
-
+class DepartmentBase(SQLModel):
     name: str
     code: str = Field(unique=True)
 
 
-class DepartmentCreate(SQLModel):
-    name: str
-    code: str
+class DepartmentCreate(DepartmentBase):
+    pass
 
 
 class DepartmentUpdate(DepartmentCreate):
     pass
 
 
-class DepartmentPublic(SQLModel):
-    id: UUID
-    name: str
-    code: str
-    created_at: datetime
-    updated_at: datetime
+class DepartmentPublic(DepartmentBase, Base):
+    pass
+
+
+class Department(DepartmentPublic, table=True):
+    __tablename__ = 'departments'
