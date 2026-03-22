@@ -29,6 +29,7 @@ class TeacherUpdate(TeacherCreate):
     pass
 
 
+
 class TeacherPublic(SQLModel):
     id: UUID
     user_id: UUID

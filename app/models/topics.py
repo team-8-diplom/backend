@@ -30,7 +30,6 @@ class TopicCreate(SQLModel):
 class TopicUpdate(TopicCreate):
     pass
 
-
 class TopicPublic(SQLModel):
     id: UUID
     teacher_id: Optional[UUID]

@@ -24,7 +24,6 @@ class UserCreate(SQLModel):
 class UserUpdate(UserCreate):
     pass
 
-
 class UserPublic(SQLModel):
     id: UUID
     email: str

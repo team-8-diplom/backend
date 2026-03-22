@@ -22,7 +22,6 @@ class SavedTopicCreate(SQLModel):
 class SavedTopicUpdate(SavedTopicCreate):
     pass
 
-
 class SavedTopicPublic(SQLModel):
     id: UUID
     student_id: UUID
