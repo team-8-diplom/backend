@@ -1,5 +1,3 @@
-from datetime import datetime
-from typing import Optional
 from uuid import UUID
 
 from sqlmodel import Field, SQLModel
@@ -7,9 +5,7 @@ from sqlmodel import Field, SQLModel
 from .base import Base
 
 
-class Teacher(Base, table=True):
-    __tablename__ = 'teachers'
-
+class TeacherBase(SQLModel):
     user_id: UUID = Field(foreign_key='users.id', unique=True)
     first_name: str
     last_name: str
@@ -17,25 +13,17 @@ class Teacher(Base, table=True):
     department_id: UUID = Field(foreign_key='departments.id')
 
 
-class TeacherCreate(SQLModel):
-    user_id: UUID
-    first_name: str
-    last_name: str
-    position: str
-    department_id: UUID
+class TeacherCreate(TeacherBase):
+    pass
 
 
 class TeacherUpdate(TeacherCreate):
     pass
 
 
+class TeacherPublic(TeacherBase, Base):
+    pass
 
-class TeacherPublic(SQLModel):
-    id: UUID
-    user_id: UUID
-    first_name: str
-    last_name: str
-    position: str
-    department_id: UUID
-    created_at: datetime
-    updated_at: datetime
+
+class Teacher(TeacherPublic, table=True):
+    __tablename__ = 'teachers'
