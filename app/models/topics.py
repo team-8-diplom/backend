@@ -1,9 +1,14 @@
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 from uuid import UUID
 
-from sqlmodel import Field, SQLModel
+from sqlmodel import Field, Relationship, SQLModel
 
 from .base import Base
+from .enums import TopicStatus
+
+if TYPE_CHECKING:
+    from .students import Student
+    from .saved_topics import SavedTopic
 
 
 class TopicBase(SQLModel):
@@ -11,7 +16,7 @@ class TopicBase(SQLModel):
     title: str
     description: str
     department_id: UUID = Field(foreign_key='departments.id')
-    status: str
+    status: TopicStatus
     max_students: int
 
 
@@ -29,3 +34,8 @@ class TopicPublic(TopicBase, Base):
 
 class Topic(TopicPublic, table=True):
     __tablename__ = 'topics'
+
+    saved_by_students: list["Student"] = Relationship(
+        back_populates="saved_topics",
+        link_model="SavedTopic"
+    )
