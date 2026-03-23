@@ -28,3 +28,6 @@ class UserPublic(UserBase, Base):
 class User(UserPublic, table=True):
     __tablename__ = 'users'
     password_hash: str = Field(nullable=False)
+
+
+

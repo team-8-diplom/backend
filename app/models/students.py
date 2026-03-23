@@ -9,7 +9,6 @@ if TYPE_CHECKING:
     from .topics import Topic
     from .saved_topics import SavedTopic
 
-
 class StudentBase(SQLModel):
     user_id: UUID = Field(foreign_key='users.id', unique=True)
     first_name: str
@@ -33,7 +32,6 @@ class StudentPublic(StudentBase, Base):
 class Student(StudentPublic, table=True):
     __tablename__ = 'students'
 
-    # Связь с SavedTopic через link_model
     saved_topics: list["Topic"] = Relationship(
         back_populates="saved_by_students",
         link_model="SavedTopic"
