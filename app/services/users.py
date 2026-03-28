@@ -2,7 +2,7 @@ from typing import Optional, Sequence
 from uuid import UUID
 
 from app.dependencies.repositories import UserRepositoryDep
-from app.models.users import User, UserCreate, UserUpdate
+from app.models.users import User, UserCreate, UserUpdate, UserRole
 
 
 class UserService:
@@ -18,7 +18,11 @@ class UserService:
         return await self.__repository.get(user_id)
 
     async def create(self, data: UserCreate) -> User:
-        user = User(**data.model_dump())
+        user = User(
+            email=data.email,
+            password_hash=hash_password(data.password),
+            role=UserRole.STUDENT
+        )
         return await self.__repository.save(user)
 
     async def update(self, user_id: UUID, data: UserUpdate) -> Optional[User]:
