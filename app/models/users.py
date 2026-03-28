@@ -1,33 +1,38 @@
+from enum import StrEnum
 from typing import Optional
+from uuid import UUID
 
 from sqlmodel import Field, SQLModel
 
 from .base import Base
-from .enums import UserRole
+
+
+class UserRole(StrEnum):
+    STUDENT = "student"
+    TEACHER = "teacher"
+    ADMIN = "admin"
 
 
 class UserBase(SQLModel):
     email: str = Field(index=True, unique=True, max_length=255)
-    role: UserRole
 
 
 class UserCreate(UserBase):
-    password_hash: str
+    password: str
 
 
-class UserUpdate(UserCreate):
-    email: Optional[str] = Field(default=None, max_length=255)
+class UserUpdate(SQLModel):
+    email: Optional[str] = None
+    password: Optional[str] = None
     role: Optional[UserRole] = None
-    password_hash: Optional[str] = None
 
 
 class UserPublic(UserBase, Base):
-    pass
+    role: UserRole
 
 
-class User(UserPublic, table=True):
-    __tablename__ = 'users'
+class User(UserBase, Base, table=True):
+    __tablename__ = "users"
+
     password_hash: str = Field(nullable=False)
-
-
-
+    role: UserRole
