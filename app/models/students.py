@@ -4,10 +4,10 @@ from uuid import UUID
 from sqlmodel import Field, Relationship, SQLModel
 
 from .base import Base
+from .saved_topics import SavedTopic
 
 if TYPE_CHECKING:
     from .topics import Topic
-    from .saved_topics import SavedTopic
 
 class StudentBase(SQLModel):
     user_id: UUID = Field(foreign_key='users.id', unique=True)
@@ -34,5 +34,5 @@ class Student(StudentPublic, table=True):
 
     saved_topics: list["Topic"] = Relationship(
         back_populates="saved_by_students",
-        link_model="SavedTopic"
+        link_model=SavedTopic
     )

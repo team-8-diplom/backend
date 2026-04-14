@@ -4,8 +4,10 @@ from uuid import UUID
 
 from sqlmodel import Field, Relationship, SQLModel
 
+from .saved_topics import SavedTopic
+from .topic_skill import TopicSkill
 from .base import Base
-from .topic_skills import TopicSkill
+
 
 if TYPE_CHECKING:
     from .students import Student
@@ -47,7 +49,7 @@ class Topic(TopicBase, Base, table=True):
 
     saved_by_students: list["Student"] = Relationship(
         back_populates="saved_topics",
-        link_model="SavedTopic"  # если хочешь идеально — см. ниже
+        link_model=SavedTopic
     )
 
     skills: list["Skill"] = Relationship(

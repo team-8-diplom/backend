@@ -11,6 +11,12 @@ class Settings(BaseSettings):
     db_port: int = 5432
     db_name: str = 'db'
 
+    # JWT settings
+    jwt_secret_key: str
+    jwt_algorithm: str = 'HS256'
+    jwt_access_token_lifetime_minutes: int = 15
+    jwt_refresh_token_lifetime_days: int = 7
+
     model_config = SettingsConfigDict(env_file='.env')
 
 
