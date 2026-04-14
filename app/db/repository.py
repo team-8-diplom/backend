@@ -8,7 +8,6 @@ from sqlalchemy.sql._typing import (
 from sqlmodel import and_, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from app.dependencies.session import SessionDep
 from app.models.base import Base
 
 type FilterType = _ColumnExpressionArgument[bool] | bool
@@ -19,7 +18,7 @@ class Repository[Model: Base]:
     model: Type[Model]
     _session: AsyncSession
 
-    def __init__(self, session: SessionDep):
+    def __init__(self, session: AsyncSession):
         self._session = session
         # Если модель не определена в подклассе, это вызовет ошибку при обращении,
         # что правильно для отладки.

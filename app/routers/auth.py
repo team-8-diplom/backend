@@ -5,7 +5,7 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException, status, Response, Depends
 
 from app.dependencies.services import UserServiceDep, RefreshSessionServiceDep
-from app.models.users import UserCreate, UserPublic
+from app.models import UserCreate, UserPublic, RefreshSessionCreate
 from app.core.security import (
     create_access_token,
     create_refresh_token,

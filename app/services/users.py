@@ -2,7 +2,7 @@ from typing import Optional, Sequence
 from uuid import UUID
 
 from app.dependencies.repositories import UserRepositoryDep
-from app.models.users import User, UserCreate, UserUpdate, UserRole
+from app.models import User, UserCreate, UserUpdate, UserRole
 from app.core.security import hash_password, verify_password
 
 class UserService:

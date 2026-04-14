@@ -2,7 +2,7 @@ from typing import Optional, Sequence
 from uuid import UUID
 
 from app.dependencies.repositories import RefreshSessionRepositoryDep
-from app.models.refresh_sessions import RefreshSession
+from app.models import RefreshSession, RefreshSessionCreate
 
 
 class RefreshSessionService:

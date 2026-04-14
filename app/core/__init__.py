@@ -1,5 +1,3 @@
-"""Core package - exports settings and security utilities."""
-
 from app.core.settings import Settings, get_settings, settings
 from app.core.security import (
     hash_password,
