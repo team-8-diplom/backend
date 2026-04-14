@@ -34,5 +34,5 @@ class Student(StudentPublic, table=True):
 
     saved_topics: list["Topic"] = Relationship(
         back_populates="saved_by_students",
-        link_model="SavedTopic"
+        link_model="app.models.saved_topics.SavedTopic"
     )

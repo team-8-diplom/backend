@@ -15,6 +15,7 @@ from app.models.user_skills import UserSkill
 from app.models.topic_skill import TopicSkill
 from app.models.applications import Application
 from app.models.saved_topics import SavedTopic
+from app.models.refresh_sessions import RefreshSession
 
 
 async def get_user_repository(session: SessionDep):
@@ -84,3 +85,10 @@ async def get_saved_topic_repository(session: SessionDep):
 
 type SavedTopicRepository = Repository[SavedTopic]
 SavedTopicRepositoryDep = Annotated[SavedTopicRepository, Depends(get_saved_topic_repository)]
+
+
+async def get_refresh_session_repository(session: SessionDep):
+    yield Repository[RefreshSession](session)
+
+type RefreshSessionRepository = Repository[RefreshSession]
+RefreshSessionRepositoryDep = Annotated[RefreshSessionRepository, Depends(get_refresh_session_repository)]

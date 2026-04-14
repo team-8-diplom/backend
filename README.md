@@ -104,6 +104,10 @@ http://127.0.0.1:8000/redoc
 | DB_USER | Имя пользователя в БД | Строка | postgres |
 | DB_PASSWORD | Пароль БД | Строка | pass |
 | DB_NAME | Название БД | Строка | db |
+| JWT_SECRET_KEY | Секретный ключ для подписи JWT токенов (мин. 32 символа) | Строка | - |
+| JWT_ALGORITHM | Алгоритм шифрования JWT | Строка | HS256 |
+| JWT_ACCESS_TOKEN_LIFETIME_MINUTES | Время жизни access-токена в минутах | Число | 15 |
+| JWT_REFRESH_TOKEN_LIFETIME_DAYS | Время жизни refresh-токена в днях | Число | 7 |
 
 ### Запуск миграций
 ```bash
