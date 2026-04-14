@@ -4,14 +4,16 @@ from uuid import UUID
 from app.dependencies.repositories import UserRepositoryDep
 from app.models import User, UserCreate, UserUpdate, UserRole
 from app.core.security import hash_password, verify_password
+from app.db.repository import Repository
+from app.dependencies.session import SessionDep
+
 
 class UserService:
-    __repository: UserRepositoryDep
+    def __init__(self, session: SessionDep):
+        # Передаем модель User в репозиторий
+        self.__repository = Repository(session=session, model=User)
 
-    def __init__(self, repository: UserRepositoryDep):
-        self.__repository = repository
-
-    async def get_all(self) -> Sequence[User]:
+    async def get_all(self):
         return await self.__repository.fetch()
 
     async def get(self, user_id: UUID) -> Optional[User]:

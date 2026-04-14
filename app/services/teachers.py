@@ -1,16 +1,16 @@
 from typing import Optional, Sequence
 from uuid import UUID
 
-from app.dependencies.repositories import TeacherRepositoryDep
+
 from app.models.teachers import Teacher, TeacherCreate, TeacherUpdate
+from app.db.repository import Repository
+from app.dependencies.session import SessionDep
 
 
 class TeacherService:
-    __repository: TeacherRepositoryDep
-
-    def __init__(self, repository: TeacherRepositoryDep):
-        self.__repository = repository
-
+    def __init__(self, session: SessionDep):
+        # Передаем модель User в репозиторий
+        self.__repository = Repository(session=session, model=Teacher)
 
     async def get(self, teacher_id: UUID) -> Optional[Teacher]:
         return await self.__repository.get(teacher_id)

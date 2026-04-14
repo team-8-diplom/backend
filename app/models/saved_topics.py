@@ -4,19 +4,20 @@ from sqlmodel import Field, SQLModel
 
 from .base import Base
 
-class SavedTopic(SQLModel, table=True):
-    __tablename__ = "saved_topics"
-
+class SavedTopicBase(SQLModel):
     student_id: UUID = Field(foreign_key="students.id", primary_key=True)
     topic_id: UUID = Field(foreign_key="topics.id", primary_key=True)
 
-class SavedTopicCreate(SavedTopic):
+class SavedTopicCreate(SavedTopicBase):
     pass
 
 
-class SavedTopicUpdate(SavedTopic):
+class SavedTopicUpdate(SavedTopicCreate):
     pass
 
 
-class SavedTopicPublic(SavedTopic, Base):
+class SavedTopicPublic(SavedTopicBase, Base):
     pass
+
+class SavedTopic(SavedTopicPublic, table=True):
+    __tablename__ = "saved_topics"

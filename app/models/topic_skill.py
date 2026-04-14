@@ -5,20 +5,20 @@ from sqlmodel import Field, SQLModel
 from .base import Base
 
 
-class TopicSkill(SQLModel, table=True):
-    __tablename__ = "topic_skills"
-
+class TopicSkillBase(SQLModel):
     topic_id: UUID = Field(foreign_key="topics.id", primary_key=True)
     skill_id: UUID = Field(foreign_key="skills.id", primary_key=True)
     is_required: bool
 
-class TopicSkillCreate(TopicSkill):
+class TopicSkillCreate(TopicSkillBase):
     pass
 
 
 class TopicSkillUpdate(TopicSkillCreate):
     pass
 
-
-class TopicSkillPublic(TopicSkill, Base):
+class TopicSkillPublic(TopicSkillBase, Base):
     pass
+
+class TopicSkill(TopicSkillPublic, table=True):
+    __tablename__ = "topic_skills"

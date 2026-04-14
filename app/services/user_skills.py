@@ -1,15 +1,15 @@
 from typing import Optional, Sequence
 from uuid import UUID
 
-from app.dependencies.repositories import UserSkillRepositoryDep
 from app.models.user_skills import UserSkill, UserSkillCreate, UserSkillUpdate
+from app.db.repository import Repository
+from app.dependencies.session import SessionDep
 
 
 class UserSkillService:
-    __repository: UserSkillRepositoryDep
-
-    def __init__(self, repository: UserSkillRepositoryDep):
-        self.__repository = repository
+    def __init__(self, session: SessionDep):
+        # Передаем модель Student в репозиторий
+        self.__repository = Repository(session=session, model=UserSkill)
 
 
     async def get(self, user_skill_id: UUID) -> Optional[UserSkill]:
