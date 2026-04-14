@@ -1,8 +1,7 @@
-from typing import Optional, Sequence
+from typing import Optional, Sequence, Type
 from uuid import UUID
 
-from generics import get_filled_type
-from pydantic import BaseModel as PydanticBaseModel, generics
+from pydantic import BaseModel as PydanticBaseModel
 from sqlalchemy.sql._typing import (
     _ColumnExpressionArgument,
 )
@@ -16,73 +15,72 @@ type FilterType = _ColumnExpressionArgument[bool] | bool
 
 
 class Repository[Model: Base]:
-    __model: type[Model] | None = None
-    __session: AsyncSession
-
-    @property
-    def model(self) -> type[Model]:
-        if self.__model is None:
-            self.__model = get_filled_type(self, Repository, 0)
-
-        return self.__model
+    # Теперь мы явно указываем модель в подклассах или через конструктор
+    model: Type[Model]
+    _session: AsyncSession
 
     def __init__(self, session: SessionDep):
-        self.__session = session
+        self._session = session
+        # Если модель не определена в подклассе, это вызовет ошибку при обращении,
+        # что правильно для отладки.
 
     async def get(self, pk: UUID) -> Optional[Model]:
-        return await self.__session.get(self.model, pk)
+        return await self._session.get(self.model, pk)
 
     async def fetch(
-        self,
-        filters: Optional[PydanticBaseModel] = None,
-        offset: Optional[int] = None,
-        limit: Optional[int] = None,
+            self,
+            filters: Optional[PydanticBaseModel] = None,
+            offset: Optional[int] = None,
+            limit: Optional[int] = None,
     ) -> Sequence[Model]:
         select_statement = select(self.model)
         if filters is not None:
             filter_statement = and_(True)
-            filters_dict = filters.model_dump()
+            filters_dict = filters.model_dump(exclude_unset=True)
             for key, value in filters_dict.items():
-                if not hasattr(self.__model, key):
+                # Проверяем наличие поля именно в модели
+                if not hasattr(self.model, key):
                     continue
                 if value is not None:
                     filter_statement = and_(
                         filter_statement, getattr(self.model, key) == value
                     )
             select_statement = select_statement.where(filter_statement)
+
         if offset is not None:
             select_statement = select_statement.offset(offset)
         if limit is not None:
             select_statement = select_statement.limit(limit)
-        entities = await self.__session.exec(select_statement)
+
+        entities = await self._session.exec(select_statement)
         return entities.all()
 
     async def save(self, instance: Model) -> Model:
-        self.__session.add(instance)
-        await self.__session.commit()
-        await self.__session.refresh(instance)
+        self._session.add(instance)
+        await self._session.commit()
+        await self._session.refresh(instance)
         return instance
 
     async def save_all(self, instances: list[Model]) -> list[Model]:
-        self.__session.add_all(instances)
-        await self.__session.commit()
+        self._session.add_all(instances)
+        await self._session.commit()
         for instance in instances:
-            await self.__session.refresh(instance)
+            await self._session.refresh(instance)
         return instances
 
     async def delete(self, pk: UUID) -> Optional[Model]:
         instance = await self.get(pk)
         if instance is None:
-            return instance
-        await self.__session.delete(instance)
-        await self.__session.commit()
+            return None
+        await self._session.delete(instance)
+        await self._session.commit()
         return instance
 
     async def update(self, pk: UUID, updates: PydanticBaseModel) -> Optional[Model]:
         instance = await self.get(pk)
         if instance is None:
             return None
-        instance_update_dump = updates.model_dump()
+        instance_update_dump = updates.model_dump(exclude_unset=True)
         for key, value in instance_update_dump.items():
             if hasattr(instance, key):
                 setattr(instance, key, value)

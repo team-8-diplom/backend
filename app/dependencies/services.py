@@ -12,6 +12,7 @@ from app.services.user_skills import UserSkillService
 from app.services.topic_skill import TopicSkillService
 from app.services.applications import ApplicationService
 from app.services.saved_topics import SavedTopicService
+from routers.refresh_sessions import RefreshSessionService
 
 UserServiceDep = Annotated[UserService, Depends(UserService)]
 DepartmentServiceDep = Annotated[DepartmentService, Depends(DepartmentService)]
@@ -23,3 +24,4 @@ UserSkillServiceDep = Annotated[UserSkillService, Depends(UserSkillService)]
 TopicSkillServiceDep = Annotated[TopicSkillService, Depends(TopicSkillService)]
 ApplicationServiceDep = Annotated[ApplicationService, Depends(ApplicationService)]
 SavedTopicServiceDep = Annotated[SavedTopicService, Depends(SavedTopicService)]
+RefreshSessionServiceDep = Annotated[RefreshSessionService, Depends(RefreshSessionService)]
