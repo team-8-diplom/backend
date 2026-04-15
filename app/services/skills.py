@@ -1,15 +1,14 @@
 from typing import Optional, Sequence
 from uuid import UUID
 
-from app.models.skills import Skill, SkillCreate, SkillUpdate
 from app.db.repository import Repository
 from app.dependencies.session import SessionDep
+from app.models.skills import Skill, SkillCreate, SkillUpdate
 
 
 class SkillService:
     def __init__(self, session: SessionDep):
         self.__repository = Repository(session=session, model=Skill)
-
 
     async def get(self, skill_id: UUID) -> Optional[Skill]:
         return await self.__repository.get(skill_id)

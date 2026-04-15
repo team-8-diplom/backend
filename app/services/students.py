@@ -1,9 +1,9 @@
-from typing import Optional, Sequence
+from typing import Optional
 from uuid import UUID
 
-from app.models.students import Student, StudentCreate, StudentUpdate
 from app.db.repository import Repository
 from app.dependencies.session import SessionDep
+from app.models.students import Student, StudentCreate, StudentUpdate
 
 
 class StudentService:

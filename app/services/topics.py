@@ -1,16 +1,15 @@
 from typing import Optional, Sequence
 from uuid import UUID
 
-from app.models.topics import Topic, TopicCreate, TopicUpdate
 from app.db.repository import Repository
 from app.dependencies.session import SessionDep
+from app.models.topics import Topic, TopicCreate, TopicUpdate
 
 
 class TopicService:
     def __init__(self, session: SessionDep):
         # Передаем модель Student в репозиторий
         self.__repository = Repository(session=session, model=Topic)
-
 
     async def get(self, topic_id: UUID) -> Optional[Topic]:
         return await self.__repository.get(topic_id)

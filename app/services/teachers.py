@@ -1,10 +1,9 @@
 from typing import Optional, Sequence
 from uuid import UUID
 
-
-from app.models.teachers import Teacher, TeacherCreate, TeacherUpdate
 from app.db.repository import Repository
 from app.dependencies.session import SessionDep
+from app.models.teachers import Teacher, TeacherCreate, TeacherUpdate
 
 
 class TeacherService:

@@ -1,11 +1,9 @@
-from typing import Optional, Sequence
+from typing import Optional
 from uuid import UUID
 
-
-from app.models.departments import Department, DepartmentCreate, DepartmentUpdate
 from app.db.repository import Repository
 from app.dependencies.session import SessionDep
-
+from app.models.departments import Department, DepartmentCreate, DepartmentUpdate
 
 
 class DepartmentService:
@@ -19,7 +17,9 @@ class DepartmentService:
         department = Department(**data.model_dump())
         return await self.__repository.save(department)
 
-    async def update(self, department_id: UUID, data: DepartmentUpdate) -> Optional[Department]:
+    async def update(
+        self, department_id: UUID, data: DepartmentUpdate
+    ) -> Optional[Department]:
         return await self.__repository.update(department_id, data)
 
     async def delete(self, department_id: UUID) -> Optional[Department]:

@@ -1,8 +1,8 @@
-from typing import Optional, Sequence
+from typing import Optional
 from uuid import UUID
 
 from app.dependencies.repositories import RefreshSessionRepositoryDep
-from app.models import RefreshSession, RefreshSessionCreate
+from app.models import RefreshSession
 
 
 class RefreshSessionService:
@@ -23,6 +23,7 @@ class RefreshSessionService:
     async def get_by_jti(self, jti: str) -> Optional[RefreshSession]:
         """Get a refresh session by its JTI."""
         from sqlmodel import select
+
         statement = select(RefreshSession).where(RefreshSession.token_jti == jti)
         results = await self.__repository._Repository__session.exec(statement)
         return results.first()
@@ -30,6 +31,7 @@ class RefreshSessionService:
     async def invalidate(self, jti: str) -> Optional[RefreshSession]:
         """Invalidate (delete) a refresh session by its JTI."""
         from sqlmodel import select
+
         statement = select(RefreshSession).where(RefreshSession.token_jti == jti)
         results = await self.__repository._Repository__session.exec(statement)
         session = results.first()
@@ -41,6 +43,7 @@ class RefreshSessionService:
     async def invalidate_all_for_user(self, user_id: UUID) -> int:
         """Invalidate all refresh sessions for a user. Returns count of deleted sessions."""
         from sqlmodel import select
+
         statement = select(RefreshSession).where(RefreshSession.user_id == user_id)
         results = await self.__repository._Repository__session.exec(statement)
         sessions = results.all()

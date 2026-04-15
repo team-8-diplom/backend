@@ -1,11 +1,10 @@
-from typing import Optional, Sequence
+from typing import Optional
 from uuid import UUID
 
-from app.dependencies.repositories import UserRepositoryDep
-from app.models import User, UserCreate, UserUpdate, UserRole
 from app.core.security import hash_password, verify_password
 from app.db.repository import Repository
 from app.dependencies.session import SessionDep
+from app.models import User, UserCreate, UserRole, UserUpdate
 
 
 class UserService:
@@ -21,6 +20,7 @@ class UserService:
 
     async def get_by_email(self, email: str) -> Optional[User]:
         from sqlmodel import select
+
         statement = select(User).where(User.email == email)
         results = await self.__repository._Repository__session.exec(statement)
         return results.first()
@@ -29,7 +29,7 @@ class UserService:
         user = User(
             email=data.email,
             password_hash=hash_password(data.password),
-            role=UserRole.STUDENT
+            role=UserRole.STUDENT,
         )
         return await self.__repository.save(user)
 

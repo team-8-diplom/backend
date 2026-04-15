@@ -1,9 +1,12 @@
-from typing import Type, TypeVar, Generic, List, Optional
-from sqlalchemy import select, update, delete
+from typing import Generic, List, Optional, Type, TypeVar
+
+from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.models.base import Base # Или ваша базовая модель
+
+from app.models.base import Base  # Или ваша базовая модель
 
 T = TypeVar('T', bound=Base)
+
 
 class Repository(Generic[T]):
     def __init__(self, session: AsyncSession, model: Type[T]):
@@ -28,7 +31,12 @@ class Repository(Generic[T]):
         return new_item
 
     async def update(self, id: int, data: dict) -> Optional[T]:
-        stmt = update(self.model).where(self.model.id == id).values(**data).returning(self.model)
+        stmt = (
+            update(self.model)
+            .where(self.model.id == id)
+            .values(**data)
+            .returning(self.model)
+        )
         result = await self.session.execute(stmt)
         await self.session.commit()
         return result.scalar_one_or_none()

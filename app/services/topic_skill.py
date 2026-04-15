@@ -1,10 +1,9 @@
 from typing import Optional, Sequence
 from uuid import UUID
 
-
-from app.models.topic_skill import TopicSkill, TopicSkillCreate, TopicSkillUpdate
 from app.db.repository import Repository
 from app.dependencies.session import SessionDep
+from app.models.topic_skill import TopicSkill, TopicSkillCreate, TopicSkillUpdate
 
 
 class TopicSkillService:
@@ -25,7 +24,9 @@ class TopicSkillService:
         topic_skill = TopicSkill(**data.model_dump())
         return await self.__repository.save(topic_skill)
 
-    async def update(self, topic_skill_id: UUID, data: TopicSkillUpdate) -> Optional[TopicSkill]:
+    async def update(
+        self, topic_skill_id: UUID, data: TopicSkillUpdate
+    ) -> Optional[TopicSkill]:
         return await self.__repository.update(topic_skill_id, data)
 
     async def delete(self, topic_skill_id: UUID) -> Optional[TopicSkill]:

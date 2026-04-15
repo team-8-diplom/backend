@@ -30,7 +30,4 @@ class SkillPublic(SkillBase, Base):
 class Skill(SkillPublic, table=True):
     __tablename__ = 'skills'
 
-    topics: list["Topic"] = Relationship(
-        back_populates="skills",
-        link_model=TopicSkill
-    )
+    topics: list['Topic'] = Relationship(back_populates='skills', link_model=TopicSkill)

@@ -1,4 +1,4 @@
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 from uuid import UUID, uuid4
 
@@ -7,8 +7,7 @@ from passlib.context import CryptContext
 
 from app.core.settings import settings
 
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
 
 
 def hash_password(password: str) -> str:
@@ -22,37 +21,37 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 
 def create_jwt_token(
-    subject: UUID,
-    expires_delta: timedelta,
-    token_type: str = "access"
+    subject: UUID, expires_delta: timedelta, token_type: str = 'access'
 ) -> str:
     now = datetime.now(timezone.utc)
     expire = now + expires_delta
 
     payload = {
-        "iat": now,
-        "exp": expire,
-        "sub": str(subject),
-        "jti": str(uuid4()),
-        "type": token_type,
+        'iat': now,
+        'exp': expire,
+        'sub': str(subject),
+        'jti': str(uuid4()),
+        'type': token_type,
     }
 
-    return jwt.encode(payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
+    return jwt.encode(
+        payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm
+    )
 
 
 def create_access_token(user_id: UUID) -> str:
     """Create an access token for a user."""
     expires_delta = timedelta(minutes=settings.jwt_access_token_lifetime_minutes)
-    return create_jwt_token(user_id, expires_delta, token_type="access")
+    return create_jwt_token(user_id, expires_delta, token_type='access')
 
 
 def create_refresh_token(user_id: UUID) -> str:
     """Create a refresh token for a user."""
     expires_delta = timedelta(days=settings.jwt_refresh_token_lifetime_days)
-    return create_jwt_token(user_id, expires_delta, token_type="refresh")
+    return create_jwt_token(user_id, expires_delta, token_type='refresh')
 
 
-def decode_jwt_token(token: str, token_type: str = "access") -> Optional[dict]:
+def decode_jwt_token(token: str, token_type: str = 'access') -> Optional[dict]:
     """
     Decode and validate a JWT token.
 
@@ -65,13 +64,11 @@ def decode_jwt_token(token: str, token_type: str = "access") -> Optional[dict]:
     """
     try:
         payload = jwt.decode(
-            token,
-            settings.jwt_secret_key,
-            algorithms=[settings.jwt_algorithm]
+            token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm]
         )
 
         # Verify token type
-        if payload.get("type") != token_type:
+        if payload.get('type') != token_type:
             return None
 
         return payload
@@ -81,12 +78,12 @@ def decode_jwt_token(token: str, token_type: str = "access") -> Optional[dict]:
         return None
 
 
-def get_user_id_from_token(token: str, token_type: str = "access") -> Optional[UUID]:
+def get_user_id_from_token(token: str, token_type: str = 'access') -> Optional[UUID]:
     payload = decode_jwt_token(token, token_type)
     if payload is None:
         return None
 
     try:
-        return UUID(payload["sub"])
+        return UUID(payload['sub'])
     except (KeyError, ValueError):
         return None
