@@ -1,6 +1,5 @@
 from enum import StrEnum
 from typing import Optional
-from uuid import UUID
 
 from sqlmodel import Field, SQLModel
 
@@ -8,9 +7,9 @@ from .base import Base
 
 
 class UserRole(StrEnum):
-    STUDENT = "student"
-    TEACHER = "teacher"
-    ADMIN = "admin"
+    STUDENT = 'student'
+    TEACHER = 'teacher'
+    ADMIN = 'admin'
 
 
 class UserBase(SQLModel):
@@ -31,7 +30,7 @@ class UserPublic(UserBase, Base):
 
 
 class User(UserBase, Base, table=True):
-    __tablename__ = "users"
+    __tablename__ = 'users'
 
     password_hash: str = Field(nullable=False)
     role: UserRole
