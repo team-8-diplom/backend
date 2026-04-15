@@ -1,8 +1,12 @@
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
-from sqlmodel import Field, SQLModel
+from sqlmodel import Field, Relationship, SQLModel
 
 from .base import Base
+from .topic_skill import TopicSkill
+
+if TYPE_CHECKING:
+    from .topics import Topic
 
 
 class SkillBase(SQLModel):
@@ -25,3 +29,8 @@ class SkillPublic(SkillBase, Base):
 
 class Skill(SkillPublic, table=True):
     __tablename__ = 'skills'
+
+    topics: list["Topic"] = Relationship(
+        back_populates="skills",
+        link_model=TopicSkill
+    )

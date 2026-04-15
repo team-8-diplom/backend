@@ -4,10 +4,9 @@ from uuid import UUID
 
 from sqlmodel import Field, Relationship, SQLModel
 
+from .base import Base
 from .saved_topics import SavedTopic
 from .topic_skill import TopicSkill
-from .base import Base
-
 
 if TYPE_CHECKING:
     from .students import Student
