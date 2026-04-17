@@ -1,8 +1,7 @@
 from enum import StrEnum
 from typing import Optional
-
+from pydantic import EmailStr # Важно: импорт из pydantic
 from sqlmodel import Field, SQLModel
-
 from .base import Base
 
 
@@ -13,24 +12,30 @@ class UserRole(StrEnum):
 
 
 class UserBase(SQLModel):
-    email: str = Field(index=True, unique=True, max_length=255)
+    email: EmailStr = Field(index=True, unique=True, max_length=255)
 
 
 class UserCreate(UserBase):
     password: str
+    # Указываем дефолтную роль, чтобы поле всегда было заполнено
+    role: UserRole = UserRole.STUDENT
 
 
 class UserUpdate(SQLModel):
-    email: Optional[str] = None
+    # Делаем все поля опциональными для PATCH-запросов
+    email: Optional[EmailStr] = None
     role: Optional[UserRole] = None
+    password: Optional[str] = None
 
 
-class UserPublic(UserBase, Base):
+class UserPublic(Base, UserBase):
+    # Base должен быть первым для правильного наследования id
     role: UserRole
 
 
-class User(UserBase, Base, table=True):
+class User(Base, UserBase, table=True):
     __tablename__ = 'users'
 
     password_hash: str = Field(nullable=False)
-    role: UserRole
+    # В самой таблице роль обязательна
+    role: UserRole = Field(default=UserRole.STUDENT)

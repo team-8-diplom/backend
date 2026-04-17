@@ -3,11 +3,11 @@ from typing import Optional
 from uuid import UUID, uuid4
 
 import jwt
-from passlib.context import CryptContext
+from pwdlib import PasswordHash
 
 from app.core.settings import settings
 
-pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
+pwd_context = PasswordHash.recommended()
 
 
 def hash_password(password: str) -> str:
@@ -35,19 +35,19 @@ def create_jwt_token(
     }
 
     return jwt.encode(
-        payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm
+        payload, settings.auth.jwt_secret_key, algorithm=settings.auth.jwt_algorithm
     )
 
 
 def create_access_token(user_id: UUID) -> str:
     """Create an access token for a user."""
-    expires_delta = timedelta(minutes=settings.jwt_access_token_lifetime_minutes)
+    expires_delta = timedelta(minutes=settings.auth.jwt_access_token_lifetime_minutes)
     return create_jwt_token(user_id, expires_delta, token_type='access')
 
 
 def create_refresh_token(user_id: UUID) -> str:
     """Create a refresh token for a user."""
-    expires_delta = timedelta(days=settings.jwt_refresh_token_lifetime_days)
+    expires_delta = timedelta(days=settings.auth.jwt_refresh_token_lifetime_days)
     return create_jwt_token(user_id, expires_delta, token_type='refresh')
 
 
@@ -64,7 +64,7 @@ def decode_jwt_token(token: str, token_type: str = 'access') -> Optional[dict]:
     """
     try:
         payload = jwt.decode(
-            token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm]
+            token, settings.auth.jwt_secret_key, algorithms=[settings.auth.jwt_algorithm]
         )
 
         # Verify token type

@@ -4,8 +4,8 @@ from sqlmodel import Field, SQLModel
 
 
 class TopicSkillBase(SQLModel):
-    topic_id: UUID = Field(foreign_key='topics.id')
-    skill_id: UUID = Field(foreign_key='skills.id')
+    topic_id: UUID = Field(foreign_key='topics.id', primary_key=True)
+    skill_id: UUID = Field(foreign_key='skills.id', primary_key=True)
     is_required: bool = True
 
 
@@ -23,6 +23,3 @@ class TopicSkillPublic(TopicSkillBase):
 
 class TopicSkill(TopicSkillBase, table=True):
     __tablename__ = 'topic_skills'
-
-    topic_id: UUID = Field(foreign_key='topics.id', primary_key=True)
-    skill_id: UUID = Field(foreign_key='skills.id', primary_key=True)
