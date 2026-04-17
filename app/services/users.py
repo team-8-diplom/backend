@@ -20,6 +20,13 @@ class UserService:
     async def get_by_email(self, email: str) -> Optional[User]:
         return await self._repository.get_by_field('email', email)
 
+    async def get_by_email(self, email: str) -> Optional[User]:
+        from sqlmodel import select
+
+        statement = select(User).where(User.email == email)
+        results = await self.__repository._Repository__session.exec(statement)
+        return results.first()
+
     async def create(self, data: UserCreate) -> User:
         """Создать пользователя. Роль назначается автоматически."""
         user = User(
