@@ -1,9 +1,10 @@
-from typing import Generic, List, Optional, Type, TypeVar
+from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, Union
+from uuid import UUID
 
 from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.base import Base  # Или ваша базовая модель
+from app.models.base import Base
 
 T = TypeVar('T', bound=Base)
 
@@ -11,26 +12,37 @@ T = TypeVar('T', bound=Base)
 class Repository(Generic[T]):
     def __init__(self, session: AsyncSession, model: Type[T]):
         self.session = session
-        self.model = model  # Теперь модель точно будет здесь
+        self.model = model
 
     async def fetch(self, limit: int = 100, offset: int = 0) -> List[T]:
         stmt = select(self.model).limit(limit).offset(offset)
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 
-    async def get_by_id(self, id: int) -> Optional[T]:
-        stmt = select(self.model).where(self.model.id == id)
+    async def get_by_id(self, id: Union[int, UUID]) -> Optional[T]:
+        # Используем .get() — это быстрее и удобнее для поиска по PK
+        return await self.session.get(self.model, id)
+
+    async def get_by_field(self, field: str, value: Any) -> Optional[T]:
+        column = getattr(self.model, field)
+        stmt = select(self.model).where(column == value)
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def create(self, data: dict) -> T:
+    async def fetch_by_field(self, field: str, value: Any) -> List[T]:
+        column = getattr(self.model, field)
+        stmt = select(self.model).where(column == value)
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
+
+    async def create(self, data: Dict[str, Any]) -> T: # Исправлен аргумент
         new_item = self.model(**data)
         self.session.add(new_item)
         await self.session.commit()
         await self.session.refresh(new_item)
         return new_item
 
-    async def update(self, id: int, data: dict) -> Optional[T]:
+    async def update(self, id: Union[int, UUID], data: Dict[str, Any]) -> Optional[T]: # Исправлен аргумент
         stmt = (
             update(self.model)
             .where(self.model.id == id)
@@ -41,8 +53,14 @@ class Repository(Generic[T]):
         await self.session.commit()
         return result.scalar_one_or_none()
 
-    async def delete(self, id: int) -> bool:
+    async def delete(self, id: Union[int, UUID]) -> bool:
         stmt = delete(self.model).where(self.model.id == id)
         result = await self.session.execute(stmt)
         await self.session.commit()
         return result.rowcount > 0
+
+    async def save(self, item: T) -> T:
+        self.session.add(item)
+        await self.session.commit()
+        await self.session.refresh(item)
+        return item

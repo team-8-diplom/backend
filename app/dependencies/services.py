@@ -13,6 +13,7 @@ from app.services.topic_skill import TopicSkillService
 from app.services.topics import TopicService
 from app.services.user_skills import UserSkillService
 from app.services.users import UserService
+from services.auth import AuthService
 
 UserServiceDep = Annotated[UserService, Depends(UserService)]
 DepartmentServiceDep = Annotated[DepartmentService, Depends(DepartmentService)]
@@ -27,3 +28,7 @@ SavedTopicServiceDep = Annotated[SavedTopicService, Depends(SavedTopicService)]
 RefreshSessionServiceDep = Annotated[
     RefreshSessionService, Depends(RefreshSessionService)
 ]
+def get_auth_service() -> AuthService:
+    return AuthService()
+
+AuthServiceDep = Annotated[AuthService, Depends(get_auth_service)]

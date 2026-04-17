@@ -14,7 +14,7 @@ class SavedTopicCreate(SavedTopicBase):
     pass
 
 
-class SavedTopicUpdate(SavedTopicCreate):
+class SavedTopicUpdate(SavedTopicBase):
     pass
 
 
