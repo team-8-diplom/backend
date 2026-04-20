@@ -12,7 +12,6 @@ from app.models.departments import (
     DepartmentUpdate,
 )
 from app.models.refresh_sessions import RefreshSession, RefreshSessionCreate
-from app.models.roles import Permission, Role, RolePermission, UserRoleLink
 from app.models.saved_topics import SavedTopic, SavedTopicCreate, SavedTopicPublic
 from app.models.skills import Skill, SkillCreate, SkillPublic, SkillUpdate
 from app.models.students import Student, StudentCreate, StudentPublic, StudentUpdate
@@ -39,11 +38,6 @@ __all__ = [
     'UserUpdate',
     'UserPublic',
     'UserRole',
-    # Roles & Permissions
-    'Role',
-    'Permission',
-    'RolePermission',
-    'UserRoleLink',
     # Departments
     'Department',
     'DepartmentCreate',

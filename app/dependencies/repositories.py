@@ -18,7 +18,7 @@ from app.models.users import User
 
 
 async def get_user_repository(session: SessionDep):
-    yield Repository(session=session, model=User)
+    yield Repository[User](session)
 
 
 type UserRepository = Repository[User]
@@ -26,7 +26,7 @@ UserRepositoryDep = Annotated[UserRepository, Depends(get_user_repository)]
 
 
 async def get_department_repository(session: SessionDep):
-    yield Repository(session=session, model=Department)
+    yield Repository[Department](session)
 
 
 type DepartmentRepository = Repository[Department]
@@ -36,7 +36,7 @@ DepartmentRepositoryDep = Annotated[
 
 
 async def get_student_repository(session: SessionDep):
-    yield Repository(session=session, model=Student)
+    yield Repository[Student](session)
 
 
 type StudentRepository = Repository[Student]
@@ -44,7 +44,7 @@ StudentRepositoryDep = Annotated[StudentRepository, Depends(get_student_reposito
 
 
 async def get_teacher_repository(session: SessionDep):
-    yield Repository(session=session, model=Teacher)
+    yield Repository[Teacher](session)
 
 
 type TeacherRepository = Repository[Teacher]
@@ -52,7 +52,7 @@ TeacherRepositoryDep = Annotated[TeacherRepository, Depends(get_teacher_reposito
 
 
 async def get_topic_repository(session: SessionDep):
-    yield Repository(session=session, model=Topic)
+    yield Repository[Topic](session)
 
 
 type TopicRepository = Repository[Topic]
@@ -60,7 +60,7 @@ TopicRepositoryDep = Annotated[TopicRepository, Depends(get_topic_repository)]
 
 
 async def get_skill_repository(session: SessionDep):
-    yield Repository(session=session, model=Skill)
+    yield Repository[Skill](session)
 
 
 type SkillRepository = Repository[Skill]
@@ -68,7 +68,7 @@ SkillRepositoryDep = Annotated[SkillRepository, Depends(get_skill_repository)]
 
 
 async def get_user_skill_repository(session: SessionDep):
-    yield Repository(session=session, model=UserSkill)
+    yield Repository[UserSkill](session)
 
 
 type UserSkillRepository = Repository[UserSkill]
@@ -78,7 +78,7 @@ UserSkillRepositoryDep = Annotated[
 
 
 async def get_topic_skill_repository(session: SessionDep):
-    yield Repository(session=session, model=TopicSkill)
+    yield Repository[TopicSkill](session)
 
 
 type TopicSkillRepository = Repository[TopicSkill]
@@ -88,7 +88,7 @@ TopicSkillRepositoryDep = Annotated[
 
 
 async def get_application_repository(session: SessionDep):
-    yield Repository(session=session, model=Application)
+    yield Repository[Application](session)
 
 
 type ApplicationRepository = Repository[Application]
@@ -98,7 +98,7 @@ ApplicationRepositoryDep = Annotated[
 
 
 async def get_saved_topic_repository(session: SessionDep):
-    yield Repository(session=session, model=SavedTopic)
+    yield Repository[SavedTopic](session)
 
 
 type SavedTopicRepository = Repository[SavedTopic]
@@ -108,7 +108,7 @@ SavedTopicRepositoryDep = Annotated[
 
 
 async def get_refresh_session_repository(session: SessionDep):
-    yield Repository(session=session, model=RefreshSession)
+    yield Repository[RefreshSession](session)
 
 
 type RefreshSessionRepository = Repository[RefreshSession]

@@ -67,7 +67,7 @@ class AuthService:
                 detail='Failed to generate refresh token',
             )
 
-        expires_at = datetime.fromtimestamp(refresh_payload['exp'], tz=timezone.utc).replace(tzinfo=None)
+        expires_at = datetime.fromtimestamp(refresh_payload['exp'], tz=timezone.utc)
         await refresh_session_service.create(
             RefreshSessionCreate(
                 user_id=user.id,
@@ -163,7 +163,7 @@ class AuthService:
         new_refresh_token = create_refresh_token(user.id)
         new_payload = decode_jwt_token(new_refresh_token, token_type='refresh')
 
-        expires_at = datetime.fromtimestamp(new_payload['exp'], tz=timezone.utc).replace(tzinfo=None)
+        expires_at = datetime.fromtimestamp(new_payload['exp'], tz=timezone.utc)
         await refresh_session_service.create(
             RefreshSessionCreate(
                 user_id=user.id,
