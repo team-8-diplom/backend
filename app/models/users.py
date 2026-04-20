@@ -1,7 +1,9 @@
 from enum import StrEnum
-from typing import Optional
-from pydantic import EmailStr # Важно: импорт из pydantic
+from typing import TYPE_CHECKING, Optional
+from pydantic import EmailStr
 from sqlmodel import Field, SQLModel
+from uuid import UUID
+
 from .base import Base
 
 

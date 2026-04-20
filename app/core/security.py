@@ -4,8 +4,11 @@ from uuid import UUID, uuid4
 
 import jwt
 from pwdlib import PasswordHash
+from fastapi.security import OAuth2PasswordBearer
 
 from app.core.settings import settings
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 pwd_context = PasswordHash.recommended()
 
