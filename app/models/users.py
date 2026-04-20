@@ -1,9 +1,10 @@
+from datetime import datetime, timezone
 from enum import StrEnum
-from typing import TYPE_CHECKING, Optional
+from typing import Optional
 from pydantic import EmailStr
 from sqlmodel import Field, SQLModel
-from uuid import UUID
 
+# Предполагаем, что Base содержит поле id: Optional[UUID]
 from .base import Base
 
 
@@ -15,29 +16,27 @@ class UserRole(StrEnum):
 
 class UserBase(SQLModel):
     email: EmailStr = Field(index=True, unique=True, max_length=255)
+    role: UserRole = Field(default=UserRole.STUDENT)
 
 
 class UserCreate(UserBase):
     password: str
-    # Указываем дефолтную роль, чтобы поле всегда было заполнено
-    role: UserRole = UserRole.STUDENT
 
 
 class UserUpdate(SQLModel):
-    # Делаем все поля опциональными для PATCH-запросов
     email: Optional[EmailStr] = None
     role: Optional[UserRole] = None
     password: Optional[str] = None
 
 
 class UserPublic(Base, UserBase):
-    # Base должен быть первым для правильного наследования id
-    role: UserRole
+    created_at: datetime
 
 
 class User(Base, UserBase, table=True):
     __tablename__ = 'users'
 
     password_hash: str = Field(nullable=False)
-    # В самой таблице роль обязательна
-    role: UserRole = Field(default=UserRole.STUDENT)
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None)
+    )

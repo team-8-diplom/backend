@@ -25,32 +25,42 @@ async def register(
         role_service: RoleServiceDep,
 ):
     """Регистрация нового пользователя."""
+    print(1)
     created_user = await service.register(user_data, user_service)
 
     # Назначаем роль по умолчанию
+    print(2)
     public_role = await role_service.get_by_name(settings.auth_bootstrap.default_user_role)
     if public_role:
         await role_service.assign_role_to_user(created_user.id, public_role.id)
-
+    print(3)
     return created_user
+
+
+from fastapi.security import OAuth2PasswordRequestForm
 
 
 @router.post('/login')
 async def login(
-        login_data: LoginRequest,  # Исправлено с login_ на login_data
+        form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
         service: AuthServiceDep,
         user_service: UserServiceDep,
         refresh_session_service: RefreshSessionServiceDep,
         response: Response,
 ):
     """Логин и установка Refresh Token в httponly cookie."""
+
+    # Создаем объект, который ожидает ваш сервис, из данных формы
+    # Swagger кладет email в поле username
+    login_data = LoginRequest(email=form_data.username, password=form_data.password)
+
     auth_result = await service.login(login_data, user_service, refresh_session_service)
 
     response.set_cookie(
         key='refresh_token',
         value=auth_result.refresh_token,
         httponly=True,
-        secure=False,  # В продакшене обязательно True
+        secure=False,
         samesite='lax',
         max_age=auth_result.refresh_token_max_age,
         path='/',
