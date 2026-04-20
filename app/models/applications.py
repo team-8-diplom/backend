@@ -2,9 +2,8 @@ from enum import StrEnum
 from typing import Optional
 from uuid import UUID
 
-from sqlmodel import Field, SQLModel
-
-from .base import Base
+from sqlalchemy import ForeignKey, String
+from sqlalchemy.orm import Mapped, mapped_column
 
 
 class ApplicationStatus(StrEnum):
@@ -13,25 +12,35 @@ class ApplicationStatus(StrEnum):
     REJECTED = 'rejected'
 
 
-class ApplicationBase(SQLModel):
-    topic_id: UUID = Field(foreign_key='topics.id')
-    user_id: UUID = Field(foreign_key='users.id')
-    motivation_letter: Optional[str] = None
+class ApplicationBase:
+    topic_id: UUID
+    user_id: UUID
+    motivation_letter: Optional[str]
 
 
 class ApplicationCreate(ApplicationBase):
-    pass
-
-
-class ApplicationUpdate(SQLModel):
+    topic_id: UUID
+    user_id: UUID
     motivation_letter: Optional[str] = None
 
 
-class ApplicationPublic(ApplicationBase, Base):
+class ApplicationUpdate:
+    motivation_letter: Optional[str] = None
+
+
+class ApplicationPublic:
+    id: UUID
+    topic_id: UUID
+    user_id: UUID
+    motivation_letter: Optional[str]
     status: ApplicationStatus
 
 
-class Application(ApplicationBase, Base, table=True):
+class Application:
     __tablename__ = 'applications'
 
-    status: ApplicationStatus = Field(default=ApplicationStatus.PENDING)
+    id: Mapped[UUID] = mapped_column(primary_key=True)
+    topic_id: Mapped[UUID] = mapped_column(ForeignKey('topics.id'))
+    user_id: Mapped[UUID] = mapped_column(ForeignKey('users.id'))
+    motivation_letter: Mapped[Optional[str]] = mapped_column(String, default=None)
+    status: Mapped[ApplicationStatus] = mapped_column(default=ApplicationStatus.PENDING)

@@ -1,25 +1,41 @@
+from typing import Optional
 from uuid import UUID
 
-from sqlmodel import Field, SQLModel
+from sqlalchemy import ForeignKey, Boolean
+from sqlalchemy.orm import Mapped, mapped_column
+
+from .base import Base
 
 
-class TopicSkillBase(SQLModel):
-    topic_id: UUID = Field(foreign_key='topics.id', primary_key=True)
-    skill_id: UUID = Field(foreign_key='skills.id', primary_key=True)
-    is_required: bool = True
+class TopicSkillBase(Base):
+    __abstract__ = True
+
+    topic_id: Mapped[UUID] = mapped_column(ForeignKey('topics.id'), primary_key=True)
+    skill_id: Mapped[UUID] = mapped_column(ForeignKey('skills.id'), primary_key=True)
+    is_required: Mapped[bool] = mapped_column(Boolean, default=True)
 
 
 class TopicSkillCreate(TopicSkillBase):
     pass
 
 
-class TopicSkillUpdate(SQLModel):
-    is_required: bool | None = None
+class TopicSkillUpdate(Base):
+    __abstract__ = True
+
+    is_required: Mapped[Optional[bool]] = None
 
 
-class TopicSkillPublic(TopicSkillBase):
-    pass
+class TopicSkillPublic(Base):
+    __abstract__ = True
+
+    topic_id: Mapped[UUID]
+    skill_id: Mapped[UUID]
+    is_required: Mapped[bool]
 
 
-class TopicSkill(TopicSkillBase, table=True):
+class TopicSkill(Base):
     __tablename__ = 'topic_skills'
+
+    topic_id: Mapped[UUID] = mapped_column(ForeignKey('topics.id'), primary_key=True)
+    skill_id: Mapped[UUID] = mapped_column(ForeignKey('skills.id'), primary_key=True)
+    is_required: Mapped[bool] = mapped_column(Boolean, default=True)

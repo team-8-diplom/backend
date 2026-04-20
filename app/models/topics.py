@@ -2,7 +2,8 @@ from enum import StrEnum
 from typing import TYPE_CHECKING, Optional
 from uuid import UUID
 
-from sqlmodel import Field, Relationship, SQLModel
+from sqlalchemy import ForeignKey, String
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base
 from .saved_topics import SavedTopic
@@ -19,35 +20,53 @@ class TopicStatus(StrEnum):
     ASSIGNED = 'assigned'
 
 
-class TopicBase(SQLModel):
-    teacher_id: Optional[UUID] = Field(default=None, foreign_key='teachers.id')
-    title: str
-    description: str
-    department_id: UUID = Field(foreign_key='departments.id')
-    max_students: int
+class TopicBase(Base):
+    __abstract__ = True
+
+    teacher_id: Mapped[Optional[UUID]] = mapped_column(ForeignKey('teachers.id'), default=None)
+    title: Mapped[str] = mapped_column(String)
+    description: Mapped[str] = mapped_column(String)
+    department_id: Mapped[UUID] = mapped_column(ForeignKey('departments.id'))
+    max_students: Mapped[int]
 
 
 class TopicCreate(TopicBase):
     pass
 
 
-class TopicUpdate(SQLModel):
-    title: Optional[str] = None
-    description: Optional[str] = None
-    max_students: Optional[int] = None
+class TopicUpdate(Base):
+    __abstract__ = True
+
+    title: Mapped[Optional[str]] = None
+    description: Mapped[Optional[str]] = None
+    max_students: Mapped[Optional[int]] = None
 
 
-class TopicPublic(TopicBase, Base):
-    status: TopicStatus
+class TopicPublic(Base):
+    __abstract__ = True
+
+    teacher_id: Mapped[Optional[UUID]]
+    title: Mapped[str]
+    description: Mapped[str]
+    department_id: Mapped[UUID]
+    max_students: Mapped[int]
+    status: Mapped[TopicStatus]
 
 
-class Topic(TopicBase, Base, table=True):
+class Topic(Base):
     __tablename__ = 'topics'
 
-    status: TopicStatus = Field(default=TopicStatus.OPEN)
+    teacher_id: Mapped[Optional[UUID]] = mapped_column(ForeignKey('teachers.id'), default=None)
+    title: Mapped[str] = mapped_column(String)
+    description: Mapped[str] = mapped_column(String)
+    department_id: Mapped[UUID] = mapped_column(ForeignKey('departments.id'))
+    max_students: Mapped[int]
+    status: Mapped[TopicStatus] = mapped_column(default=TopicStatus.OPEN)
 
-    saved_by_students: list['Student'] = Relationship(
-        back_populates='saved_topics', link_model=SavedTopic
+    saved_by_students: Mapped[list['Student']] = relationship(
+        secondary='saved_topics', back_populates='saved_topics'
     )
 
-    skills: list['Skill'] = Relationship(back_populates='topics', link_model=TopicSkill)
+    skills: Mapped[list['Skill']] = relationship(
+        secondary='topic_skills', back_populates='topics'
+    )

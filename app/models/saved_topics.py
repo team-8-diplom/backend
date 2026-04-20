@@ -1,13 +1,16 @@
 from uuid import UUID
 
-from sqlmodel import Field, SQLModel
+from sqlalchemy import ForeignKey
+from sqlalchemy.orm import Mapped, mapped_column
 
-from app.models.base import Base
+from .base import Base
 
 
-class SavedTopicBase(SQLModel):
-    student_id: UUID = Field(foreign_key='students.id')
-    topic_id: UUID = Field(foreign_key='topics.id')
+class SavedTopicBase(Base):
+    __abstract__ = True
+
+    student_id: Mapped[UUID] = mapped_column(ForeignKey('students.id'))
+    topic_id: Mapped[UUID] = mapped_column(ForeignKey('topics.id'))
 
 
 class SavedTopicCreate(SavedTopicBase):
@@ -18,12 +21,15 @@ class SavedTopicUpdate(SavedTopicBase):
     pass
 
 
-class SavedTopicPublic(SavedTopicBase, Base):
-    pass
+class SavedTopicPublic(Base):
+    __abstract__ = True
+
+    student_id: Mapped[UUID]
+    topic_id: Mapped[UUID]
 
 
-class SavedTopic(SavedTopicBase, table=True):
+class SavedTopic(Base):
     __tablename__ = 'saved_topics'
 
-    student_id: UUID = Field(foreign_key='students.id', primary_key=True)
-    topic_id: UUID = Field(foreign_key='topics.id', primary_key=True)
+    student_id: Mapped[UUID] = mapped_column(ForeignKey('students.id'), primary_key=True)
+    topic_id: Mapped[UUID] = mapped_column(ForeignKey('topics.id'), primary_key=True)

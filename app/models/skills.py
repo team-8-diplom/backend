@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING, Optional
 
-from sqlmodel import Field, Relationship, SQLModel
+from sqlalchemy import String
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base
 from .topic_skill import TopicSkill
@@ -9,10 +10,12 @@ if TYPE_CHECKING:
     from .topics import Topic
 
 
-class SkillBase(SQLModel):
-    name: str = Field(unique=True)
-    category: Optional[str] = None
-    code: Optional[str] = Field(default=None, unique=True)
+class SkillBase(Base):
+    __abstract__ = True
+
+    name: Mapped[str] = mapped_column(String, unique=True)
+    category: Mapped[Optional[str]] = mapped_column(String, default=None)
+    code: Mapped[Optional[str]] = mapped_column(String, default=None, unique=True)
 
 
 class SkillCreate(SkillBase):
@@ -23,11 +26,21 @@ class SkillUpdate(SkillCreate):
     pass
 
 
-class SkillPublic(SkillBase, Base):
-    pass
+class SkillPublic(Base):
+    __abstract__ = True
+
+    name: Mapped[str]
+    category: Mapped[Optional[str]]
+    code: Mapped[Optional[str]]
 
 
-class Skill(SkillPublic, table=True):
+class Skill(Base):
     __tablename__ = 'skills'
 
-    topics: list['Topic'] = Relationship(back_populates='skills', link_model=TopicSkill)
+    name: Mapped[str] = mapped_column(String, unique=True)
+    category: Mapped[Optional[str]] = mapped_column(String, default=None)
+    code: Mapped[Optional[str]] = mapped_column(String, default=None, unique=True)
+
+    topics: Mapped[list['Topic']] = relationship(
+        secondary='topic_skills', back_populates='skills'
+    )

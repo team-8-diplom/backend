@@ -1,14 +1,18 @@
 from datetime import datetime, timezone
 from uuid import UUID
 
-from sqlmodel import Field, SQLModel
+from sqlalchemy import String, DateTime, ForeignKey, Index
+from sqlalchemy.orm import Mapped, mapped_column
+
 from .base import Base
 
 
-class RefreshSessionBase(SQLModel):
-    user_id: UUID = Field(foreign_key='users.id', nullable=False, index=True)
-    token_jti: str = Field(unique=True, nullable=False, max_length=255)  # Увеличил длину для надежности
-    expires_at: datetime = Field(nullable=False)
+class RefreshSessionBase(Base):
+    __abstract__ = True
+
+    user_id: Mapped[UUID] = mapped_column(ForeignKey('users.id'), nullable=False, index=True)
+    token_jti: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
 
 class RefreshSessionCreate(RefreshSessionBase):
@@ -16,9 +20,13 @@ class RefreshSessionCreate(RefreshSessionBase):
     pass
 
 
-class RefreshSession(Base, RefreshSessionBase, table=True):
+class RefreshSession(Base):
     """Финальная таблица в БД."""
     __tablename__ = 'refresh_sessions'
+
+    user_id: Mapped[UUID] = mapped_column(ForeignKey('users.id'), nullable=False, index=True)
+    token_jti: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
     # Дополнительно можно добавить метод проверки истечения токена
     @property
