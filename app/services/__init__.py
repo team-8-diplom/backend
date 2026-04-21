@@ -9,6 +9,7 @@ from app.services.topic_skill import TopicSkillService
 from app.services.topics import TopicService
 from app.services.user_skills import UserSkillService
 from app.services.users import UserService
+from app.services.roles import RoleService
 
 __all__ = [
     'UserService',
@@ -22,4 +23,5 @@ __all__ = [
     'ApplicationService',
     'SavedTopicService',
     'RefreshSessionService',
+    'RoleService',
 ]

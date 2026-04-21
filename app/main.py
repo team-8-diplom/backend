@@ -12,6 +12,7 @@ from app.routers import (
     topics,
     user_skills,
     users,
+    user_roles,
 )
 
 app = FastAPI(title='Team 8 Project', version='0.1.0')
@@ -19,6 +20,7 @@ app = FastAPI(title='Team 8 Project', version='0.1.0')
 api_router = APIRouter(prefix='/api/v1')
 
 api_router.include_router(users.router)
+api_router.include_router(user_roles.router)
 api_router.include_router(applications.router)
 api_router.include_router(departments.router)
 api_router.include_router(saved_topics.router)
