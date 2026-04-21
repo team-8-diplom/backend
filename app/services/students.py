@@ -1,22 +1,21 @@
-from typing import Optional, Sequence
+from typing import Optional
 from uuid import UUID
 
-from app.dependencies.repositories import StudentRepositoryDep
+from app.db.repository import Repository
+from app.dependencies.session import SessionDep
 from app.models.students import Student, StudentCreate, StudentUpdate
 
 
 class StudentService:
-    __repository: StudentRepositoryDep
+    def __init__(self, session: SessionDep):
+        # Передаем модель Student в репозиторий
+        self.__repository = Repository(session=session, model=Student)
 
-    def __init__(self, repository: StudentRepositoryDep):
-        self.__repository = repository
-
+    async def get_all(self):
+        return await self.__repository.fetch()
 
     async def get(self, student_id: UUID) -> Optional[Student]:
         return await self.__repository.get(student_id)
-
-    async def get_all(self) -> Sequence[Student]:
-        return await self.__repository.fetch()
 
     async def create(self, data: StudentCreate) -> Student:
         student = Student(**data.model_dump())

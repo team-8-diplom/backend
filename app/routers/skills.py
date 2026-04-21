@@ -1,5 +1,5 @@
-from uuid import UUID
 from typing import List
+from uuid import UUID
 from fastapi import APIRouter, status
 from app.dependencies.services import SkillServiceDep
 from app.models.skills import SkillCreate, SkillUpdate, SkillPublic
@@ -8,7 +8,7 @@ from app.core.responses import detail_responses
 
 router = APIRouter(prefix="/skills", tags=["Skills"], responses=detail_responses)
 
-@router.get("/", response_model=List[SkillPublic])
+@router.get('/', response_model=List[SkillPublic])
 async def get_skills(service: SkillServiceDep):
     items = await service.get_all()
     return [SkillPublic.model_validate(item) for item in items]

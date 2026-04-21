@@ -5,24 +5,25 @@ from uuid import UUID
 from sqlmodel import Field, Relationship, SQLModel
 
 from .base import Base
-from .topic_skills import TopicSkill
+from .saved_topics import SavedTopic
+from .topic_skill import TopicSkill
 
 if TYPE_CHECKING:
-    from .students import Student
     from .skills import Skill
+    from .students import Student
 
 
 class TopicStatus(StrEnum):
-    OPEN = "open"
-    CLOSED = "closed"
-    ASSIGNED = "assigned"
+    OPEN = 'open'
+    CLOSED = 'closed'
+    ASSIGNED = 'assigned'
 
 
 class TopicBase(SQLModel):
-    teacher_id: Optional[UUID] = Field(default=None, foreign_key="teachers.id")
+    teacher_id: Optional[UUID] = Field(default=None, foreign_key='teachers.id')
     title: str
     description: str
-    department_id: UUID = Field(foreign_key="departments.id")
+    department_id: UUID = Field(foreign_key='departments.id')
     max_students: int
 
 
@@ -41,16 +42,12 @@ class TopicPublic(TopicBase, Base):
 
 
 class Topic(TopicBase, Base, table=True):
-    __tablename__ = "topics"
+    __tablename__ = 'topics'
 
     status: TopicStatus = Field(default=TopicStatus.OPEN)
 
-    saved_by_students: list["Student"] = Relationship(
-        back_populates="saved_topics",
-        link_model="SavedTopic"  # если хочешь идеально — см. ниже
+    saved_by_students: list['Student'] = Relationship(
+        back_populates='saved_topics', link_model=SavedTopic
     )
 
-    skills: list["Skill"] = Relationship(
-        back_populates="topics",
-        link_model=TopicSkill
-    )
+    skills: list['Skill'] = Relationship(back_populates='topics', link_model=TopicSkill)

@@ -1,0 +1,53 @@
+from app.dependencies.repositories import (
+    ApplicationRepositoryDep,
+    DepartmentRepositoryDep,
+    RefreshSessionRepositoryDep,
+    SavedTopicRepositoryDep,
+    SkillRepositoryDep,
+    StudentRepositoryDep,
+    TeacherRepositoryDep,
+    TopicRepositoryDep,
+    TopicSkillRepositoryDep,
+    UserRepositoryDep,
+    UserSkillRepositoryDep,
+)
+from app.dependencies.services import (
+    ApplicationServiceDep,
+    DepartmentServiceDep,
+    RefreshSessionServiceDep,
+    SavedTopicServiceDep,
+    SkillServiceDep,
+    StudentServiceDep,
+    TeacherServiceDep,
+    TopicServiceDep,
+    TopicSkillServiceDep,
+    UserServiceDep,
+    UserSkillServiceDep,
+)
+
+__all__ = [
+    # Repository dependencies
+    'UserRepositoryDep',
+    'DepartmentRepositoryDep',
+    'StudentRepositoryDep',
+    'TeacherRepositoryDep',
+    'TopicRepositoryDep',
+    'SkillRepositoryDep',
+    'UserSkillRepositoryDep',
+    'TopicSkillRepositoryDep',
+    'ApplicationRepositoryDep',
+    'SavedTopicRepositoryDep',
+    'RefreshSessionRepositoryDep',
+    # Service dependencies
+    'UserServiceDep',
+    'DepartmentServiceDep',
+    'StudentServiceDep',
+    'TeacherServiceDep',
+    'TopicServiceDep',
+    'SkillServiceDep',
+    'UserSkillServiceDep',
+    'TopicSkillServiceDep',
+    'ApplicationServiceDep',
+    'SavedTopicServiceDep',
+    'RefreshSessionServiceDep',
+]

@@ -1,5 +1,5 @@
-from uuid import UUID
 from typing import List
+from uuid import UUID
 from fastapi import APIRouter, status
 from app.dependencies.services import SavedTopicServiceDep
 from app.models.saved_topics import SavedTopicCreate, SavedTopicUpdate, SavedTopicPublic
@@ -8,7 +8,7 @@ from app.core.responses import detail_responses
 
 router = APIRouter(prefix="/saved-topics", tags=["SavedTopics"], responses=detail_responses)
 
-@router.get("/", response_model=List[SavedTopicPublic])
+@router.get('/', response_model=List[SavedTopicPublic])
 async def get_saved_topics(service: SavedTopicServiceDep):
     items = await service.get_all()
     return [SavedTopicPublic.model_validate(item) for item in items]

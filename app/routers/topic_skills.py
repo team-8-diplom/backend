@@ -1,5 +1,5 @@
-from uuid import UUID
 from typing import List
+from uuid import UUID
 from fastapi import APIRouter, status
 from app.dependencies.services import TopicSkillServiceDep
 from app.models.topic_skill import TopicSkillCreate, TopicSkillUpdate, TopicSkillPublic
@@ -8,7 +8,7 @@ from app.core.responses import detail_responses
 
 router = APIRouter(prefix="/topic-skills", tags=["TopicSkills"], responses=detail_responses)
 
-@router.get("/", response_model=List[TopicSkillPublic])
+@router.get('/', response_model=List[TopicSkillPublic])
 async def get_topic_skills(service: TopicSkillServiceDep):
     items = await service.get_all()
     return [TopicSkillPublic.model_validate(item) for item in items]

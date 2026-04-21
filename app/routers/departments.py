@@ -1,5 +1,5 @@
-from uuid import UUID
 from typing import List
+from uuid import UUID
 from fastapi import APIRouter, status
 from app.dependencies.services import DepartmentServiceDep
 from app.models.departments import DepartmentCreate, DepartmentUpdate, DepartmentPublic
@@ -8,7 +8,7 @@ from app.core.responses import detail_responses
 
 router = APIRouter(prefix="/departments", tags=["Departments"], responses=detail_responses)
 
-@router.get("/", response_model=List[DepartmentPublic])
+@router.get('/', response_model=List[DepartmentPublic])
 async def get_departments(service: DepartmentServiceDep):
     items = await service.get_all()
     return [DepartmentPublic.model_validate(item) for item in items]

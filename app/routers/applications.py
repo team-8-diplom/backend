@@ -1,5 +1,5 @@
-from uuid import UUID
 from typing import List
+from uuid import UUID
 from fastapi import APIRouter, status
 from app.dependencies.services import ApplicationServiceDep
 from app.models.applications import ApplicationCreate, ApplicationUpdate, ApplicationPublic
@@ -8,7 +8,7 @@ from app.core.responses import detail_responses
 
 router = APIRouter(prefix="/applications", tags=["Applications"], responses=detail_responses)
 
-@router.get("/", response_model=List[ApplicationPublic])
+@router.get('/', response_model=List[ApplicationPublic])
 async def get_applications(service: ApplicationServiceDep):
     items = await service.get_all()
     return [ApplicationPublic.model_validate(item) for item in items]
