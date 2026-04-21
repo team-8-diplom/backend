@@ -1,15 +1,16 @@
-from typing import List, Optional
+from typing import List
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel
 
-from app.dependencies.services import UserServiceDep, RoleServiceDep
+from app.dependencies.services import RoleServiceDep, UserServiceDep
 from app.models.users import UserPublic
 
 
 class UserRoleUpdate(BaseModel):
     """Модель для обновления роли пользователя."""
+
     role_id: UUID
 
 
@@ -31,8 +32,7 @@ async def assign_user_role(
     user = await user_service.get(user_id)
     if not user:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail='User not found'
+            status_code=status.HTTP_404_NOT_FOUND, detail='User not found'
         )
 
     # Проверяем существование роли
@@ -40,16 +40,14 @@ async def assign_user_role(
     role = await role_service.get(role_data.role_id)
     if not role:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail='Role not found'
+            status_code=status.HTTP_404_NOT_FOUND, detail='Role not found'
         )
 
     # Назначаем роль
     await user_service.assign_role(user_id, role_data.role_id)
 
     # Возвращаем обновленного пользователя
-    updated_user = await user_service.get(user_id)
-    return updated_user # FastAPI сам вызовет model_validate благодаря response_model
+    return await user_service.get(user_id)
 
 
 @router.get('/{user_id}/roles', response_model=List[str])
@@ -63,8 +61,7 @@ async def get_user_roles(
     user = await user_service.get(user_id)
     if not user:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail='User not found'
+            status_code=status.HTTP_404_NOT_FOUND, detail='User not found'
         )
 
     roles = await role_service.get_user_roles(user_id)

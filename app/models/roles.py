@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING, Optional
 from uuid import UUID
 
-from sqlmodel import Field, SQLModel, Relationship
+from sqlmodel import Field, Relationship
 
 from .base import Base
 
@@ -15,7 +15,7 @@ class Permission(Base, table=True):
 
 
 if TYPE_CHECKING:
-    from .users import User
+    pass
 
 
 class Role(Base, table=True):
@@ -41,15 +41,15 @@ class UserRoleLink(Base, table=True):
 
 
 # Setup many-to-many relationships after all classes are defined
-Role.model_fields["permissions"] = Relationship(
-    back_populates="roles",
+Role.model_fields['permissions'] = Relationship(
+    back_populates='roles',
     link_model=RolePermission,
 )
-Role.model_fields["users"] = Relationship(
-    back_populates="roles",
+Role.model_fields['users'] = Relationship(
+    back_populates='roles',
     link_model=UserRoleLink,
 )
-Permission.model_fields["roles"] = Relationship(
-    back_populates="permissions",
+Permission.model_fields['roles'] = Relationship(
+    back_populates='permissions',
     link_model=RolePermission,
 )

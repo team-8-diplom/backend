@@ -1,7 +1,8 @@
 from functools import lru_cache
-from pydantic import BaseModel, Field
-from pydantic_settings import BaseSettings, SettingsConfigDict
+
 from fastapi.security import OAuth2PasswordBearer
+from pydantic import BaseModel
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class DatabaseSettings(BaseModel):
@@ -15,7 +16,7 @@ class DatabaseSettings(BaseModel):
     @property
     def url(self) -> str:
         """Собирает строку подключения из настроек."""
-        return f"{self.db_schema}://{self.db_user}:{self.db_password}@{self.db_host}:{self.db_port}/{self.db_name}"
+        return f'{self.db_schema}://{self.db_user}:{self.db_password}@{self.db_host}:{self.db_port}/{self.db_name}'
 
 
 class AuthSettings(BaseModel):
@@ -32,8 +33,17 @@ class AuthBootstrapSettings(BaseModel):
 
     bootstrap_roles: dict = {
         'public': ['users:read:own', 'topics:read', 'skills:read'],
-        'admin': ['users:*', 'roles:*', 'permissions:*', 'topics:*', 'skills:*',
-                  'teachers:*', 'students:*', 'applications:*', 'departments:*']
+        'admin': [
+            'users:*',
+            'roles:*',
+            'permissions:*',
+            'topics:*',
+            'skills:*',
+            'teachers:*',
+            'students:*',
+            'applications:*',
+            'departments:*',
+        ],
     }
 
 
@@ -46,7 +56,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file='.env',
         env_nested_delimiter='__',
-        extra='ignore'  # Игнорировать лишние переменные в .env
+        extra='ignore',  # Игнорировать лишние переменные в .env
     )
 
 
@@ -57,4 +67,4 @@ def get_settings() -> Settings:
 
 settings = get_settings()
 # Не забудьте обновить путь к логину, если он отличается
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/auth/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl='api/v1/auth/login')

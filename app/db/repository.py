@@ -19,9 +19,9 @@ class Repository(Generic[T]):
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 
-    async def get_by_id(self, id: Union[int, UUID]) -> Optional[T]:
+    async def get_by_id(self, obj_id: Union[int, UUID]) -> Optional[T]:
         # Используем .get() — это быстрее и удобнее для поиска по PK
-        return await self.session.get(self.model, id)
+        return await self.session.get(self.model, obj_id)
 
     async def get_by_field(self, field: str, value: Any) -> Optional[T]:
         column = getattr(self.model, field)
@@ -35,17 +35,19 @@ class Repository(Generic[T]):
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 
-    async def create(self, data: Dict[str, Any]) -> T: # Исправлен аргумент
+    async def create(self, data: Dict[str, Any]) -> T:  # Исправлен аргумент
         new_item = self.model(**data)
         self.session.add(new_item)
         await self.session.commit()
         await self.session.refresh(new_item)
         return new_item
 
-    async def update(self, id: Union[int, UUID], data: Dict[str, Any]) -> Optional[T]: # Исправлен аргумент
+    async def update(
+        self, obj_id: Union[int, UUID], data: Dict[str, Any]
+    ) -> Optional[T]:  # Исправлен аргумент
         stmt = (
             update(self.model)
-            .where(self.model.id == id)
+            .where(self.model.id == obj_id)
             .values(**data)
             .returning(self.model)
         )
@@ -53,8 +55,8 @@ class Repository(Generic[T]):
         await self.session.commit()
         return result.scalar_one_or_none()
 
-    async def delete(self, id: Union[int, UUID]) -> bool:
-        stmt = delete(self.model).where(self.model.id == id)
+    async def delete(self, obj_id: Union[int, UUID]) -> bool:
+        stmt = delete(self.model).where(self.model.id == obj_id)
         result = await self.session.execute(stmt)
         await self.session.commit()
         return result.rowcount > 0

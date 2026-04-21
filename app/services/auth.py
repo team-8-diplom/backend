@@ -11,30 +11,36 @@ from app.core.security import (
     decode_jwt_token,
     get_user_id_from_token,
 )
+from app.core.settings import settings  # Вынес из методов
 from app.models import User, UserCreate
+from app.models.refresh_sessions import RefreshSessionCreate  # Вынес из методов
 from app.services.refresh_sessions import RefreshSessionService
-from app.models.refresh_sessions import RefreshSessionCreate # Вынес из методов
-from app.core.settings import settings # Вынес из методов
+
 
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str
+
 
 class AuthResponse(BaseModel):
     access_token: str
     refresh_token: str
     refresh_token_max_age: int
 
+
 class RefreshResponse(BaseModel):
     access_token: str
     refresh_token: str
     refresh_token_max_age: int
 
+
 class AuthService:
     """Сервис для управления аутентификацией."""
 
     async def register(
-        self, user_data: UserCreate, user_service # Исправлено имя аргумента
+        self,
+        user_data: UserCreate,
+        user_service,  # Исправлено имя аргумента
     ) -> User:
         existing_user = await user_service.get_by_email(user_data.email)
         if existing_user:
@@ -46,7 +52,7 @@ class AuthService:
 
     async def login(
         self,
-        login_data: LoginRequest, # Исправлено имя аргумента
+        login_data: LoginRequest,  # Исправлено имя аргумента
         user_service,
         refresh_session_service: RefreshSessionService,
     ) -> AuthResponse:
@@ -67,7 +73,9 @@ class AuthService:
                 detail='Failed to generate refresh token',
             )
 
-        expires_at = datetime.fromtimestamp(refresh_payload['exp'], tz=timezone.utc).replace(tzinfo=None)
+        expires_at = datetime.fromtimestamp(
+            refresh_payload['exp'], tz=timezone.utc
+        ).replace(tzinfo=None)
         await refresh_session_service.create(
             RefreshSessionCreate(
                 user_id=user.id,
@@ -79,7 +87,10 @@ class AuthService:
         return AuthResponse(
             access_token=access_token,
             refresh_token=refresh_token,
-            refresh_token_max_age=settings.auth.jwt_refresh_token_lifetime_days * 24 * 60 * 60,
+            refresh_token_max_age=settings.auth.jwt_refresh_token_lifetime_days
+            * 24
+            * 60
+            * 60,
         )
 
     async def get_current_user(self, token: str, user_service) -> User:
@@ -163,7 +174,9 @@ class AuthService:
         new_refresh_token = create_refresh_token(user.id)
         new_payload = decode_jwt_token(new_refresh_token, token_type='refresh')
 
-        expires_at = datetime.fromtimestamp(new_payload['exp'], tz=timezone.utc).replace(tzinfo=None)
+        expires_at = datetime.fromtimestamp(
+            new_payload['exp'], tz=timezone.utc
+        ).replace(tzinfo=None)
         await refresh_session_service.create(
             RefreshSessionCreate(
                 user_id=user.id,
@@ -175,5 +188,8 @@ class AuthService:
         return RefreshResponse(
             access_token=new_access_token,
             refresh_token=new_refresh_token,
-            refresh_token_max_age=settings.auth.jwt_refresh_token_lifetime_days * 24 * 60 * 60,
+            refresh_token_max_age=settings.auth.jwt_refresh_token_lifetime_days
+            * 24
+            * 60
+            * 60,
         )

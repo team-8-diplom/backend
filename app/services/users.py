@@ -1,10 +1,13 @@
 from typing import List, Optional
 from uuid import UUID
 
+from sqlmodel import select
+
 from app.core.security import hash_password, verify_password
 from app.db.repository import Repository
 from app.dependencies.session import SessionDep
-from app.models import User, UserCreate, UserUpdate, UserRole
+from app.models import User, UserCreate, UserRole, UserUpdate
+from app.models.roles import UserRoleLink
 
 
 class UserService:
@@ -18,7 +21,6 @@ class UserService:
         return await self._repository.get_by_id(user_id)
 
     async def get_by_email(self, email: str) -> Optional[User]:
-        from sqlmodel import select
         statement = select(User).where(User.email == email)
         # Исправлено: используем .session вместо ._session
         results = await self._repository.session.exec(statement)
@@ -36,8 +38,8 @@ class UserService:
     async def update(self, user_id: UUID, data: UserUpdate) -> Optional[User]:
         """Обновить данные (email или role)."""
         update_data = data.model_dump(exclude_unset=True)
-        if "password" in update_data:
-            update_data["password_hash"] = hash_password(update_data.pop("password"))
+        if 'password' in update_data:
+            update_data['password_hash'] = hash_password(update_data.pop('password'))
 
         return await self._repository.update(user_id, update_data)
 
@@ -52,16 +54,13 @@ class UserService:
 
     async def assign_role(self, user_id: UUID, role_id: UUID) -> bool:
         """Назначить роль пользователю через many-to-many связь."""
-        from app.models.roles import UserRoleLink
-        from sqlmodel import select
 
         user = await self.get(user_id)
         if not user:
             return False
 
         stmt = select(UserRoleLink).where(
-            UserRoleLink.user_id == user_id,
-            UserRoleLink.role_id == role_id
+            UserRoleLink.user_id == user_id, UserRoleLink.role_id == role_id
         )
         # Исправлено: используем .session вместо ._session
         result = await self._repository.session.exec(stmt)

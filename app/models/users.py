@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 from enum import StrEnum
 from typing import Optional
+
 from pydantic import EmailStr
 from sqlmodel import Field, SQLModel
 

@@ -10,9 +10,9 @@ from app.routers import (
     teachers,
     topic_skills,
     topics,
+    user_roles,
     user_skills,
     users,
-    user_roles,
 )
 
 app = FastAPI(title='Team 8 Project', version='0.1.0')
