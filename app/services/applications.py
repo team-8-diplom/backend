@@ -1,27 +1,26 @@
-from typing import Optional, Sequence
+from typing import Optional
 from uuid import UUID
 
-from app.dependencies.repositories import ApplicationRepositoryDep
+from app.db.repository import Repository
+from app.dependencies.session import SessionDep
 from app.models.applications import Application, ApplicationCreate, ApplicationUpdate
 
 
 class ApplicationService:
-    __repository: ApplicationRepositoryDep
+    def __init__(self, session: SessionDep):
+        # Передаем модель User в репозиторий
+        self.__repository = Repository(session=session, model=Application)
 
-    def __init__(self, repository: ApplicationRepositoryDep):
-        self.__repository = repository
-
-    async def get(self, application_id: UUID) -> Optional[Application]:
-        return await self.__repository.get(application_id)
-
-    async def get_all(self) -> Sequence[Application]:
+    async def get_all(self):
         return await self.__repository.fetch()
 
     async def create(self, data: ApplicationCreate) -> Application:
         application = Application(**data.model_dump())
         return await self.__repository.save(application)
 
-    async def update(self, application_id: UUID, data: ApplicationUpdate) -> Optional[Application]:
+    async def update(
+        self, application_id: UUID, data: ApplicationUpdate
+    ) -> Optional[Application]:
         return await self.__repository.update(application_id, data)
 
     async def delete(self, application_id: UUID) -> Optional[Application]:

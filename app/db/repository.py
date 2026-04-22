@@ -1,90 +1,68 @@
-from typing import Optional, Sequence
+from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, Union
 from uuid import UUID
 
-from generics import get_filled_type
-from pydantic import BaseModel as PydanticBaseModel, generics
-from sqlalchemy.sql._typing import (
-    _ColumnExpressionArgument,
-)
-from sqlmodel import and_, select
-from sqlmodel.ext.asyncio.session import AsyncSession
+from sqlalchemy import delete, select, update
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.dependencies.session import SessionDep
 from app.models.base import Base
 
-type FilterType = _ColumnExpressionArgument[bool] | bool
+T = TypeVar('T', bound=Base)
 
 
-class Repository[Model: Base]:
-    __model: type[Model] | None = None
-    __session: AsyncSession
+class Repository(Generic[T]):
+    def __init__(self, session: AsyncSession, model: Type[T]):
+        self.session = session
+        self.model = model
 
-    @property
-    def model(self) -> type[Model]:
-        if self.__model is None:
-            self.__model = get_filled_type(self, Repository, 0)
+    async def fetch(self, limit: int = 100, offset: int = 0) -> List[T]:
+        stmt = select(self.model).limit(limit).offset(offset)
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
 
-        return self.__model
+    async def get_by_id(self, obj_id: Union[int, UUID]) -> Optional[T]:
+        # Используем .get() — это быстрее и удобнее для поиска по PK
+        return await self.session.get(self.model, obj_id)
 
-    def __init__(self, session: SessionDep):
-        self.__session = session
+    async def get_by_field(self, field: str, value: Any) -> Optional[T]:
+        column = getattr(self.model, field)
+        stmt = select(self.model).where(column == value)
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()
 
-    async def get(self, pk: UUID) -> Optional[Model]:
-        return await self.__session.get(self.model, pk)
+    async def fetch_by_field(self, field: str, value: Any) -> List[T]:
+        column = getattr(self.model, field)
+        stmt = select(self.model).where(column == value)
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
 
-    async def fetch(
-        self,
-        filters: Optional[PydanticBaseModel] = None,
-        offset: Optional[int] = None,
-        limit: Optional[int] = None,
-    ) -> Sequence[Model]:
-        select_statement = select(self.model)
-        if filters is not None:
-            filter_statement = and_(True)
-            filters_dict = filters.model_dump()
-            for key, value in filters_dict.items():
-                if not hasattr(self.__model, key):
-                    continue
-                if value is not None:
-                    filter_statement = and_(
-                        filter_statement, getattr(self.model, key) == value
-                    )
-            select_statement = select_statement.where(filter_statement)
-        if offset is not None:
-            select_statement = select_statement.offset(offset)
-        if limit is not None:
-            select_statement = select_statement.limit(limit)
-        entities = await self.__session.exec(select_statement)
-        return entities.all()
+    async def create(self, data: Dict[str, Any]) -> T:  # Исправлен аргумент
+        new_item = self.model(**data)
+        self.session.add(new_item)
+        await self.session.commit()
+        await self.session.refresh(new_item)
+        return new_item
 
-    async def save(self, instance: Model) -> Model:
-        self.__session.add(instance)
-        await self.__session.commit()
-        await self.__session.refresh(instance)
-        return instance
+    async def update(
+        self, obj_id: Union[int, UUID], data: Dict[str, Any]
+    ) -> Optional[T]:  # Исправлен аргумент
+        stmt = (
+            update(self.model)
+            .where(self.model.id == obj_id)
+            .values(**data)
+            .returning(self.model)
+        )
+        result = await self.session.execute(stmt)
+        await self.session.commit()
+        return result.scalar_one_or_none()
 
-    async def save_all(self, instances: list[Model]) -> list[Model]:
-        self.__session.add_all(instances)
-        await self.__session.commit()
-        for instance in instances:
-            await self.__session.refresh(instance)
-        return instances
+    async def delete(self, obj_id: Union[int, UUID]) -> bool:
+        stmt = delete(self.model).where(self.model.id == obj_id)
+        result = await self.session.execute(stmt)
+        await self.session.commit()
+        return result.rowcount > 0
 
-    async def delete(self, pk: UUID) -> Optional[Model]:
-        instance = await self.get(pk)
-        if instance is None:
-            return instance
-        await self.__session.delete(instance)
-        await self.__session.commit()
-        return instance
-
-    async def update(self, pk: UUID, updates: PydanticBaseModel) -> Optional[Model]:
-        instance = await self.get(pk)
-        if instance is None:
-            return None
-        instance_update_dump = updates.model_dump()
-        for key, value in instance_update_dump.items():
-            if hasattr(instance, key):
-                setattr(instance, key, value)
-        await self.save(instance)
-        return instance
+    async def save(self, item: T) -> T:
+        self.session.add(item)
+        await self.session.commit()
+        await self.session.refresh(item)
+        return item
