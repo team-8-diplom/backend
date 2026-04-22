@@ -1,12 +1,16 @@
 from datetime import datetime, timezone
 from enum import StrEnum
-from typing import Optional
+from typing import TYPE_CHECKING, List, Optional
 
 from pydantic import EmailStr
-from sqlmodel import Field, SQLModel
+from sqlmodel import Field, Relationship, SQLModel
 
-# Предполагаем, что Base содержит поле id: Optional[UUID]
+from app.models.roles import UserRoleLink
+
 from .base import Base
+
+if TYPE_CHECKING:
+    from app.models.roles import Role
 
 
 class UserRole(StrEnum):
@@ -20,7 +24,8 @@ class UserBase(SQLModel):
     role: UserRole = Field(default=UserRole.STUDENT)
 
 
-class UserCreate(UserBase):
+class UserCreate(SQLModel):
+    email: EmailStr
     password: str
 
 
@@ -41,3 +46,5 @@ class User(Base, UserBase, table=True):
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None)
     )
+
+    roles: List['Role'] = Relationship(back_populates='users', link_model=UserRoleLink)

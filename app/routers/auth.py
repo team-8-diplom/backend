@@ -21,23 +21,19 @@ router = APIRouter(prefix='/auth', tags=['Authentication'])
     '/register', response_model=UserPublic, status_code=status.HTTP_201_CREATED
 )
 async def register(
-    user_data: UserCreate,  # Исправлено с user_ на user_data
+    user_data: UserCreate,
     service: AuthServiceDep,
     user_service: UserServiceDep,
     role_service: RoleServiceDep,
 ):
     """Регистрация нового пользователя."""
-    print(1)
     created_user = await service.register(user_data, user_service)
 
-    # Назначаем роль по умолчанию
-    print(2)
     public_role = await role_service.get_by_name(
         settings.auth_bootstrap.default_user_role
     )
     if public_role:
         await role_service.assign_role_to_user(created_user.id, public_role.id)
-    print(3)
     return created_user
 
 
@@ -50,11 +46,7 @@ async def login(
     response: Response,
 ):
     """Логин и установка Refresh Token в httponly cookie."""
-
-    # Создаем объект, который ожидает ваш сервис, из данных формы
-    # Swagger кладет email в поле username
     login_data = LoginRequest(email=form_data.username, password=form_data.password)
-
     auth_result = await service.login(login_data, user_service, refresh_session_service)
 
     response.set_cookie(
@@ -93,7 +85,8 @@ async def logout(
     """Выход с инвалидацией сессии."""
     if not refresh_token:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail='No refresh token'
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail='No refresh token',
         )
 
     await service.logout(refresh_token, refresh_session_service)
@@ -112,18 +105,21 @@ async def refresh_tokens(
     """Обновление пары токенов (Refresh Rotation)."""
     if not refresh_token:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail='Refresh token missing'
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail='Refresh token missing',
         )
 
     auth_result = await service.refresh_tokens(
-        refresh_token, user_service, refresh_session_service
+        refresh_token,
+        user_service,
+        refresh_session_service,
     )
 
     response.set_cookie(
         key='refresh_token',
         value=auth_result.refresh_token,
         httponly=True,
-        secure=False,  # Как и в логине
+        secure=False,
         samesite='lax',
         max_age=auth_result.refresh_token_max_age,
         path='/',

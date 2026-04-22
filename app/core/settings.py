@@ -1,6 +1,5 @@
 from functools import lru_cache
 
-from fastapi.security import OAuth2PasswordBearer
 from pydantic import BaseModel
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -12,11 +11,6 @@ class DatabaseSettings(BaseModel):
     db_password: str = 'pass'
     db_port: int = 5433
     db_name: str = 'db'
-
-    @property
-    def url(self) -> str:
-        """Собирает строку подключения из настроек."""
-        return f'{self.db_schema}://{self.db_user}:{self.db_password}@{self.db_host}:{self.db_port}/{self.db_name}'
 
 
 class AuthSettings(BaseModel):
@@ -52,11 +46,10 @@ class Settings(BaseSettings):
     auth: AuthSettings = AuthSettings()
     auth_bootstrap: AuthBootstrapSettings = AuthBootstrapSettings()
 
-    # env_nested_delimiter позволяет парсить DATABASE__DB_HOST в database.db_host
     model_config = SettingsConfigDict(
         env_file='.env',
         env_nested_delimiter='__',
-        extra='ignore',  # Игнорировать лишние переменные в .env
+        extra='ignore',
     )
 
 
@@ -66,5 +59,3 @@ def get_settings() -> Settings:
 
 
 settings = get_settings()
-# Не забудьте обновить путь к логину, если он отличается
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl='api/v1/auth/login')

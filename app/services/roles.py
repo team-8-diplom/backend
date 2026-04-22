@@ -23,13 +23,19 @@ class PermissionService:
         return await self._repository.get_by_field('scope', scope)
 
     async def create(
-        self, name: str, scope: str, description: Optional[str] = None
+        self,
+        name: str,
+        scope: str,
+        description: Optional[str] = None,
     ) -> Permission:
         permission = Permission(name=name, scope=scope, description=description)
         return await self._repository.save(permission)
 
     async def get_or_create(
-        self, name: str, scope: str, description: Optional[str] = None
+        self,
+        name: str,
+        scope: str,
+        description: Optional[str] = None,
     ) -> Permission:
         existing = await self.get_by_scope(scope)
         if existing:
@@ -42,7 +48,8 @@ class RoleService:
         self._repository = Repository(session=session, model=Role)
         self._permission_repository = Repository(session=session, model=Permission)
         self._role_permission_repository = Repository(
-            session=session, model=RolePermission
+            session=session,
+            model=RolePermission,
         )
         self._user_role_repository = Repository(session=session, model=UserRoleLink)
 
@@ -72,9 +79,9 @@ class RoleService:
                 )
                 if permission:
                     role_permission = RolePermission(
-                        role_id=saved_role.id, permission_id=permission.id
+                        role_id=saved_role.id,
+                        permission_id=permission.id,
                     )
-                    # Используем suppress для игнорирования дубликатов при создании
                     with suppress(Exception):
                         await self._role_permission_repository.save(role_permission)
 
@@ -99,7 +106,9 @@ class RoleService:
         )
 
     async def add_permissions_to_role(
-        self, role_id: UUID, permission_scopes: List[str]
+        self,
+        role_id: UUID,
+        permission_scopes: List[str],
     ) -> Role:
         role = await self.get(role_id)
         if not role:
@@ -109,14 +118,13 @@ class RoleService:
             permission = await self._permission_repository.get_by_field('scope', scope)
             if permission:
                 role_permission = RolePermission(
-                    role_id=role_id, permission_id=permission.id
+                    role_id=role_id,
+                    permission_id=permission.id,
                 )
-                # Исправлено: замена try-except на suppress
                 with suppress(Exception):
                     await self._role_permission_repository.save(role_permission)
 
         stmt = select(Role).where(Role.id == role_id)
-        # Исправлено: обращение через .session вместо ._Repository__session
         result = await self._repository.session.exec(stmt)
         return result.one()
 
@@ -130,7 +138,6 @@ class RoleService:
             .join(UserRoleLink, Role.id == UserRoleLink.role_id)
             .where(UserRoleLink.user_id == user_id)
         )
-        # Исправлено: обращение через .session
         result = await self._repository.session.exec(stmt)
         return list(result.all())
 
@@ -142,6 +149,5 @@ class RoleService:
             .join(UserRoleLink, RolePermission.role_id == UserRoleLink.role_id)
             .where(UserRoleLink.user_id == user_id)
         )
-        # Исправлено: обращение через .session
         result = await self._repository.session.exec(stmt)
         return set(result.all())

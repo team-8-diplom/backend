@@ -38,12 +38,3 @@ app.include_router(api_router)
 async def read_root() -> dict[str, str]:
     """Корневой эндпоинт."""
     return {'message': 'Welcome to FastAPI Project'}
-
-
-@app.get('/items/{item_id}')
-async def read_item(item_id: int, q: str | None = None) -> dict:
-    """Получение элемента по ID."""
-    response = {'item_id': item_id}
-    if q:
-        response['q'] = q
-    return response

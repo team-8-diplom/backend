@@ -22,12 +22,10 @@ class UserService:
 
     async def get_by_email(self, email: str) -> Optional[User]:
         statement = select(User).where(User.email == email)
-        # Исправлено: используем .session вместо ._session
         results = await self._repository.session.exec(statement)
         return results.first()
 
     async def create(self, data: UserCreate) -> User:
-        """Создать пользователя. Роль назначается автоматически."""
         user = User(
             email=data.email,
             password_hash=hash_password(data.password),
@@ -36,7 +34,6 @@ class UserService:
         return await self._repository.save(user)
 
     async def update(self, user_id: UUID, data: UserUpdate) -> Optional[User]:
-        """Обновить данные (email или role)."""
         update_data = data.model_dump(exclude_unset=True)
         if 'password' in update_data:
             update_data['password_hash'] = hash_password(update_data.pop('password'))
@@ -53,16 +50,14 @@ class UserService:
         return user
 
     async def assign_role(self, user_id: UUID, role_id: UUID) -> bool:
-        """Назначить роль пользователю через many-to-many связь."""
-
         user = await self.get(user_id)
         if not user:
             return False
 
         stmt = select(UserRoleLink).where(
-            UserRoleLink.user_id == user_id, UserRoleLink.role_id == role_id
+            UserRoleLink.user_id == user_id,
+            UserRoleLink.role_id == role_id,
         )
-        # Исправлено: используем .session вместо ._session
         result = await self._repository.session.exec(stmt)
         if result.first():
             return True
