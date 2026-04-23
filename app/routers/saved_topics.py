@@ -1,4 +1,4 @@
-from typing import List, Annotated
+from typing import Annotated, List
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
