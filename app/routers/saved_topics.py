@@ -1,8 +1,9 @@
-from typing import List
+from typing import List, Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 
+from app.dependencies.rbac import require_permission
 from app.dependencies.services import SavedTopicServiceDep
 from app.models.saved_topics import SavedTopicCreate, SavedTopicPublic, SavedTopicUpdate
 
@@ -17,7 +18,9 @@ async def get_saved_topics(service: SavedTopicServiceDep):
 
 @router.post('/', response_model=SavedTopicPublic, status_code=status.HTTP_201_CREATED)
 async def create_saved_topic(
-    saved_topic: SavedTopicCreate, service: SavedTopicServiceDep
+    saved_topic: SavedTopicCreate,
+    service: SavedTopicServiceDep,
+    _: Annotated[None, Depends(require_permission('saved_topics:create'))] = None,
 ):
     created = await service.create(saved_topic)
     return SavedTopicPublic.model_validate(created)

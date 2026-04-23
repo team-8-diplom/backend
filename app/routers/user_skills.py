@@ -1,8 +1,9 @@
-from typing import List
+from typing import List, Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 
+from app.dependencies.rbac import require_permission
 from app.dependencies.services import UserSkillServiceDep
 from app.models.user_skills import UserSkillCreate, UserSkillPublic, UserSkillUpdate
 
@@ -16,7 +17,11 @@ async def get_user_skills(service: UserSkillServiceDep):
 
 
 @router.post('/', response_model=UserSkillPublic, status_code=status.HTTP_201_CREATED)
-async def create_user_skill(user_skill: UserSkillCreate, service: UserSkillServiceDep):
+async def create_user_skill(
+    user_skill: UserSkillCreate,
+    service: UserSkillServiceDep,
+    _: Annotated[None, Depends(require_permission('user_skills:create'))] = None,
+):
     created = await service.create(user_skill)
     return UserSkillPublic.model_validate(created)
 
