@@ -1,8 +1,9 @@
-from typing import List
+from typing import List, Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 
+from app.dependencies.rbac import require_permission
 from app.dependencies.services import TopicServiceDep
 from app.models.topics import TopicCreate, TopicPublic, TopicUpdate
 
@@ -16,7 +17,11 @@ async def get_topics(service: TopicServiceDep):
 
 
 @router.post('/', response_model=TopicPublic, status_code=status.HTTP_201_CREATED)
-async def create_topic(topic: TopicCreate, service: TopicServiceDep):
+async def create_topic(
+    topic: TopicCreate,
+    service: TopicServiceDep,
+    _: Annotated[None, Depends(require_permission('topics:create'))] = None,
+):
     created = await service.create(topic)
     return TopicPublic.model_validate(created)
 

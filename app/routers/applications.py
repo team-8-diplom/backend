@@ -1,8 +1,9 @@
-from typing import List
+from typing import List, Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 
+from app.dependencies.rbac import require_permission
 from app.dependencies.services import ApplicationServiceDep
 from app.models.applications import (
     ApplicationCreate,
@@ -22,6 +23,7 @@ async def get_applications(service: ApplicationServiceDep):
 async def create_application(
     application: ApplicationCreate,
     service: ApplicationServiceDep,
+    _: Annotated[None, Depends(require_permission('applications:create'))] = None,
 ):
     return await service.create(application)
 

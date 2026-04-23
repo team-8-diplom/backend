@@ -9,34 +9,25 @@ logger = logging.getLogger(__name__)
 
 
 class AuthBootstrap:
-    """
-    Bootstrap для инициализации ролей и пермишенов при старте приложения.
-    Создает admin-роль, admin-юзера и public-роль если их еще нет в БД.
-    """
-
     def __init__(
-        self, role_service: RoleService, permission_service: PermissionService
+        self,
+        role_service: RoleService,
+        permission_service: PermissionService,
+        user_service: UserService,  # Добавляем сервис пользователя в зависимости
     ):
         self._role_service = role_service
         self._permission_service = permission_service
+        self._user_service = user_service
 
     async def bootstrap(self) -> None:
         """Выполнить bootstrap ролей и пермишенов."""
         logger.info('Starting roles and permissions bootstrap...')
-
-        # Создаем все пермишены из конфига
         await self._bootstrap_permissions()
-
-        # Создаем роли с пермишенами
         await self._bootstrap_roles()
-
-        # Создаем admin пользователя
         await self._bootstrap_admin_user()
-
         logger.info('Roles and permissions bootstrap completed.')
 
     async def _bootstrap_permissions(self) -> None:
-        """Создать все пермишены из конфигурации."""
         all_scopes = set()
         for scopes in settings.auth_bootstrap.bootstrap_roles.values():
             all_scopes.update(scopes)
@@ -49,12 +40,9 @@ class AuthBootstrap:
         logger.info(f'Created {len(all_scopes)} permissions.')
 
     async def _bootstrap_roles(self) -> None:
-        """Создать роли с пермишенами из конфигурации."""
         for role_name, scopes in settings.auth_bootstrap.bootstrap_roles.items():
             is_default = role_name == settings.auth_bootstrap.default_user_role
-            description = (
-                f'Default {role_name} role' if is_default else f'{role_name} role'
-            )
+            description = f'{role_name.title()} role'
 
             await self._role_service.get_or_create(
                 name=role_name,
@@ -62,39 +50,28 @@ class AuthBootstrap:
                 is_default=is_default,
                 permission_scopes=scopes,
             )
-            logger.info(
-                f'Created/verified role: {role_name} with {len(scopes)} permissions.'
-            )
+            logger.info(f'Verified role: {role_name}')
 
     async def _bootstrap_admin_user(self) -> None:
-        """Создать admin пользователя если его нет."""
+        """Создать admin пользователя через UserService."""
+        admin_email = settings.auth_bootstrap.admin_email
 
-        # Получаем session из role_service
-        session = self._role_service._repository.session
-
-        user_service = UserService(session=session)
-        existing_admin = await user_service.get_by_email(
-            settings.auth_bootstrap.admin_email
-        )
+        # Работаем только через публичные методы сервиса
+        existing_admin = await self._user_service.get_by_email(admin_email)
 
         if not existing_admin:
-            # Создаем admin пользователя
             admin_data = UserCreate(
-                email=settings.auth_bootstrap.admin_email,
+                email=admin_email,
                 password=settings.auth_bootstrap.admin_password,
             )
-            admin_user = await user_service.create(admin_data)
+            admin_user = await self._user_service.create(admin_data)
 
-            # Назначаем admin роль
+            # Назначаем роль через RoleService
             admin_role = await self._role_service.get_by_name('admin')
             if admin_role:
                 await self._role_service.assign_role_to_user(
                     admin_user.id, admin_role.id
                 )
-                logger.info(
-                    f'Created admin user: {settings.auth_bootstrap.admin_email}'
-                )
+                logger.info(f'Created admin user: {admin_email}')
         else:
-            logger.info(
-                f'Admin user already exists: {settings.auth_bootstrap.admin_email}'
-            )
+            logger.info(f'Admin user already exists: {admin_email}')
