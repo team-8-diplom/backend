@@ -1,13 +1,14 @@
 from typing import Optional, Sequence
 from uuid import UUID
 
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.db.repository import Repository
-from app.dependencies.session import SessionDep
 from app.models.saved_topics import SavedTopic, SavedTopicCreate, SavedTopicUpdate
 
 
 class SavedTopicService:
-    def __init__(self, session: SessionDep):
+    def __init__(self, session: AsyncSession):
         # Передаем модель User в репозиторий
         self.__repository = Repository(session=session, model=SavedTopic)
 

@@ -1,13 +1,14 @@
 from typing import Optional
 from uuid import UUID
 
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.db.repository import Repository
-from app.dependencies.session import SessionDep
 from app.models.applications import Application, ApplicationCreate, ApplicationUpdate
 
 
 class ApplicationService:
-    def __init__(self, session: SessionDep):
+    def __init__(self, session: AsyncSession):
         self.__repository = Repository(session=session, model=Application)
 
     async def get_all(self):

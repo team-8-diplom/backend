@@ -11,7 +11,6 @@ if TYPE_CHECKING:
 
 
 class StudentBase(SQLModel):
-    user_id: UUID = Field(foreign_key='users.id', unique=True)
     first_name: str
     last_name: str
     student_card_id: str = Field(unique=True)
@@ -27,7 +26,7 @@ class StudentUpdate(StudentCreate):
 
 
 class StudentPublic(StudentBase, Base):
-    pass
+    user_id: UUID = Field(foreign_key='users.id', unique=True)
 
 
 class Student(StudentPublic, table=True):

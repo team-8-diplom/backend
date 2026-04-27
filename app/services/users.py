@@ -1,15 +1,16 @@
 from typing import List, Optional
 from uuid import UUID
 
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.core.security import hash_password, verify_password
 from app.db.repository import Repository
-from app.dependencies.session import SessionDep
 from app.models import User, UserCreate, UserUpdate
 from app.models.roles import UserRoleLink
 
 
 class UserService:
-    def __init__(self, session: SessionDep):
+    def __init__(self, session: AsyncSession):
         self._repository = Repository(session=session, model=User)
         self._role_link_repo = Repository(session=session, model=UserRoleLink)
 

@@ -1,10 +1,11 @@
-from typing import List
+from typing import List, Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Security, status
 
 from app.dependencies.rbac import require_permission
 from app.dependencies.services import StudentServiceDep
+from app.models import User
 from app.models.students import StudentCreate, StudentPublic, StudentUpdate
 
 router = APIRouter(prefix='/students', tags=['Students'])
@@ -26,8 +27,12 @@ async def get_students(service: StudentServiceDep):
     status_code=status.HTTP_201_CREATED,
     dependencies=[Security(require_permission, scopes=['students:create'])],
 )
-async def create_student(student: StudentCreate, service: StudentServiceDep):
-    created = await service.create(student)
+async def create_student(
+        student: StudentCreate,
+        service: StudentServiceDep,
+        current_user: Annotated[User, Security(require_permission)]
+):
+    created = await service.create(student, user_id=current_user.id)
     return StudentPublic.model_validate(created)
 
 

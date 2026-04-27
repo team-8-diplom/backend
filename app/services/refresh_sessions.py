@@ -1,12 +1,12 @@
 from typing import Optional
 from uuid import UUID
 
-from app.dependencies.repositories import RefreshSessionRepositoryDep
+from app.db import Repository
 from app.models import RefreshSession, RefreshSessionCreate
 
 
 class RefreshSessionService:
-    def __init__(self, repository: RefreshSessionRepositoryDep):
+    def __init__(self, repository: Repository):
         self._repository = repository
 
     async def create(self, data: RefreshSessionCreate) -> RefreshSession:

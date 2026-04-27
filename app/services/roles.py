@@ -1,14 +1,16 @@
 from typing import List, Optional, Set
 from uuid import UUID
 
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core import settings
 from app.db.repository import Repository
-from app.dependencies.session import SessionDep
 from app.models.roles import Permission, Role, RolePermission, UserRoleLink
 from app.models.users import User
 
 
 class PermissionService:
-    def __init__(self, session: SessionDep):
+    def __init__(self, session: AsyncSession):
         self._repository = Repository(session=session, model=Permission)
 
     async def get_all(self) -> List[Permission]:
@@ -40,7 +42,7 @@ class PermissionService:
 
 
 class RoleService:
-    def __init__(self, session: SessionDep):
+    def __init__(self, session: AsyncSession):
         self._repository = Repository(session=session, model=Role)
         self._permission_repository = Repository(session=session, model=Permission)
         self._role_permission_repository = Repository(
@@ -110,6 +112,34 @@ class RoleService:
 
     async def get_user_permissions(self, user_id: UUID) -> Set[str]:
         user = await self._user_repository.get_by_id(user_id)
-        if not user:
+        if user is None:
             return set()
-        return set(user.permission_scopes)
+
+        user_role_links = await self._user_role_repository.fetch_by_field(
+            'user_id', user_id
+        )
+        role_ids = [link.role_id for link in user_role_links]
+
+        if not role_ids:
+            default_role = await self._repository.get_by_field(
+                'name', settings.auth_bootstrap.default_user_role
+            )
+            if not default_role:
+                return set()
+            role_ids = [default_role.id]
+
+        role_permission_links: List[RolePermission] = []
+        for role_id in role_ids:
+            links = await self._role_permission_repository.fetch_by_field(
+                'role_id', role_id
+            )
+            role_permission_links.extend(links)
+
+        permission_ids = {link.permission_id for link in role_permission_links}
+        scopes: Set[str] = set()
+        for permission_id in permission_ids:
+            permission = await self._permission_repository.get_by_id(permission_id)
+            if permission:
+                scopes.add(permission.scope)
+
+        return scopes

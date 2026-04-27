@@ -23,10 +23,10 @@ class AuthSettings(BaseModel):
 class AuthBootstrapSettings(BaseModel):
     admin_email: str = 'admin@example.com'
     admin_password: str = 'admin123'
-    default_user_role: str = 'student'
+    default_user_role: str = 'public'
 
     bootstrap_roles: dict = {
-        'public': ['users:read:own', 'topics:read', 'skills:read'],
+        'public': ['users:read:own', 'topics:read', 'skills:read', 'students:create', 'teachers:create'],
         'student': [
             'topics:create',
             'topics:update',
