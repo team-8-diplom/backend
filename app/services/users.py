@@ -4,7 +4,7 @@ from uuid import UUID
 from app.core.security import hash_password, verify_password
 from app.db.repository import Repository
 from app.dependencies.session import SessionDep
-from app.models import User, UserCreate, UserRole, UserUpdate
+from app.models import User, UserCreate, UserUpdate
 from app.models.roles import UserRoleLink
 
 
@@ -26,7 +26,6 @@ class UserService:
         user_data = {
             'email': data.email,
             'password_hash': hash_password(data.password),
-            'role': UserRole.STUDENT,
         }
         # Используем метод create репозитория, который принимает dict
         return await self._repository.create(user_data)
@@ -52,10 +51,3 @@ class UserService:
         user = await self.get(user_id)
         if not user:
             return False
-
-        existing_links = await self._role_link_repo.fetch_by_field('user_id', user_id)
-        if any(link.role_id == role_id for link in existing_links):
-            return True
-
-        await self._role_link_repo.create({'user_id': user_id, 'role_id': role_id})
-        return True

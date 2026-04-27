@@ -2,6 +2,7 @@ from collections.abc import Iterable
 from typing import Annotated
 
 from fastapi import Depends, HTTPException, status
+from fastapi.security import SecurityScopes
 
 from app.core.security import get_user_id_from_token, oauth2_scheme
 from app.dependencies.services import RoleServiceDep, UserServiceDep
@@ -60,23 +61,20 @@ async def get_current_user(
     return user
 
 
-def require_permission(scope: str):
-    async def _permission_dependency(
-        current_user: Annotated[User, Depends(get_current_user)],
-        role_service: RoleServiceDep,
-    ) -> User:
-        roles = await role_service.get_user_roles(current_user.id)
+async def require_permission(
+    security_scopes: SecurityScopes,
+    current_user: Annotated[User, Depends(get_current_user)],
+    role_service: RoleServiceDep,
+) -> User:
+    user_scopes = await role_service.get_user_permissions(current_user.id)
 
-        if any(role.name == 'admin' for role in roles):
-            return current_user
-
-        user_scopes = await role_service.get_user_permissions(current_user.id)
-        if _match_scope(scope, user_scopes):
-            return current_user
+    for required_scope in security_scopes.scopes:
+        if _match_scope(required_scope, user_scopes):
+            continue
 
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail=f'Insufficient permissions. Required scope: {scope}',
+            detail=f'Insufficient permissions. Required scope: {required_scope}',
         )
 
-    return _permission_dependency
+    return current_user

@@ -11,7 +11,7 @@ from app.dependencies.services import (
     RoleServiceDep,
     UserServiceDep,
 )
-from app.models import UserCreate, UserPublic
+from app.models import UserCreate, UserPublic, AccessTokenResponse
 from app.services.auth import LoginRequest
 
 router = APIRouter(prefix='/auth', tags=['Authentication'])
@@ -37,7 +37,7 @@ async def register(
     return created_user
 
 
-@router.post('/login')
+@router.post('/login', response_model=AccessTokenResponse)
 async def login(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     service: AuthServiceDep,
@@ -94,7 +94,7 @@ async def logout(
     return {'detail': 'Logged out successfully'}
 
 
-@router.post('/refresh')
+@router.post('/refresh', response_model=AccessTokenResponse)
 async def refresh_tokens(
     response: Response,
     service: AuthServiceDep,
