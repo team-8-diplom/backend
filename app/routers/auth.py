@@ -11,7 +11,7 @@ from app.dependencies.services import (
     RoleServiceDep,
     UserServiceDep,
 )
-from app.models import UserCreate, UserPublic, AccessTokenResponse
+from app.models import AccessTokenResponse, UserCreate, UserPublic
 from app.services.auth import LoginRequest
 
 router = APIRouter(prefix='/auth', tags=['Authentication'])

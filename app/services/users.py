@@ -51,3 +51,9 @@ class UserService:
         user = await self.get(user_id)
         if not user:
             return False
+        existing_links = await self._role_link_repo.fetch_by_field('user_id', user_id)
+        if any(link.role_id == role_id for link in existing_links):
+            return True
+
+        await self._role_link_repo.create({'user_id': user_id, 'role_id': role_id})
+        return True

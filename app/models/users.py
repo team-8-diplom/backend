@@ -42,7 +42,7 @@ class User(Base, UserBase, table=True):
     roles: List['Role'] = Relationship(
         back_populates='users',
         link_model=UserRoleLink,
-        sa_relationship_kwargs={"lazy": "selectin"}
+        sa_relationship_kwargs={'lazy': 'selectin'},
     )
 
     @computed_field
@@ -50,7 +50,5 @@ class User(Base, UserBase, table=True):
     def permission_scopes(self) -> Set[str]:
         # Теперь self.roles будет доступен без ошибки
         return {
-            permission.scope
-            for role in self.roles
-            for permission in role.permissions
+            permission.scope for role in self.roles for permission in role.permissions
         }
