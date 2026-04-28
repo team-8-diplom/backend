@@ -1,14 +1,16 @@
 from typing import Optional, Sequence
 from uuid import UUID
 
+from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.repository import Repository
+from app.dependencies.session import get_session
 from app.models.user_skills import UserSkill, UserSkillCreate, UserSkillUpdate
 
 
 class UserSkillService:
-    def __init__(self, session: AsyncSession):
+    def __init__(self, session: AsyncSession = Depends(get_session)):
         # Передаем модель Student в репозиторий
         self.__repository = Repository(session=session, model=UserSkill)
 

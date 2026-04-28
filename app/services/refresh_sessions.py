@@ -1,12 +1,15 @@
 from typing import Optional
 from uuid import UUID
 
+from fastapi import Depends
+
 from app.db import Repository
+from app.dependencies.repositories import get_refresh_session_repository
 from app.models import RefreshSession, RefreshSessionCreate
 
 
 class RefreshSessionService:
-    def __init__(self, repository: Repository):
+    def __init__(self, repository: Repository = Depends(get_refresh_session_repository)):
         self._repository = repository
 
     async def create(self, data: RefreshSessionCreate) -> RefreshSession:

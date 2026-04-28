@@ -21,7 +21,7 @@ class AuthSettings(BaseModel):
 
 
 class AuthBootstrapSettings(BaseModel):
-    admin_email: str = 'admin@example.com'
+    admin_email: str = 'admin@admin.com'
     admin_password: str = 'admin123'
     default_user_role: str = 'public'
 

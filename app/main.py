@@ -21,8 +21,9 @@ from app.routers import (
     user_skills,
     users,
 )
-from app.services import RoleService, UserService
-from app.services.roles import PermissionService
+
+from app.services.roles import PermissionService, RoleService
+from app.services.users import UserService
 
 
 @asynccontextmanager

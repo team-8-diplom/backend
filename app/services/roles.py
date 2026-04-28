@@ -1,10 +1,12 @@
 from typing import List, Optional, Set
 from uuid import UUID
 
+from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core import settings
 from app.db.repository import Repository
+from app.dependencies.session import get_session
 from app.models.roles import Permission, Role, RolePermission, UserRoleLink
 from app.models.users import User
 
@@ -42,7 +44,7 @@ class PermissionService:
 
 
 class RoleService:
-    def __init__(self, session: AsyncSession):
+    def __init__(self, session: AsyncSession = Depends(get_session)):
         self._repository = Repository(session=session, model=Role)
         self._permission_repository = Repository(session=session, model=Permission)
         self._role_permission_repository = Repository(
@@ -75,6 +77,26 @@ class RoleService:
             await self.add_permissions_to_role(saved_role.id, permission_scopes)
 
         return saved_role
+
+    async def get_or_create(
+            self,
+            name: str,
+            description: Optional[str] = None,
+            is_default: bool = False,
+            permission_scopes: Optional[List[str]] = None,
+    ) -> Role:
+        existing = await self.get_by_name(name)
+        if existing:
+            if permission_scopes:
+                await self.add_permissions_to_role(existing.id, permission_scopes)
+            return existing
+
+        return await self.create(
+            name=name,
+            description=description,
+            is_default=is_default,
+            permission_scopes=permission_scopes,
+        )
 
     async def add_permissions_to_role(
         self, role_id: UUID, permission_scopes: List[str]
@@ -119,14 +141,21 @@ class RoleService:
             'user_id', user_id
         )
         role_ids = [link.role_id for link in user_role_links]
+        role_names: Set[str] = set()
 
         if not role_ids:
+            default_role_name = settings.auth_bootstrap.default_user_role
+            role_names.add(default_role_name)
             default_role = await self._repository.get_by_field(
-                'name', settings.auth_bootstrap.default_user_role
+                'name', default_role_name
             )
-            if not default_role:
-                return set()
-            role_ids = [default_role.id]
+            if default_role:
+                role_ids = [default_role.id]
+        else:
+            for role_id in role_ids:
+                role = await self._repository.get_by_id(role_id)
+                if role:
+                    role_names.add(role.name)
 
         role_permission_links: List[RolePermission] = []
         for role_id in role_ids:
@@ -141,5 +170,14 @@ class RoleService:
             permission = await self._permission_repository.get_by_id(permission_id)
             if permission:
                 scopes.add(permission.scope)
+
+        if scopes:
+            return scopes
+
+        for role_name in role_names:
+            configured_scopes = settings.auth_bootstrap.bootstrap_roles.get(
+                role_name, []
+            )
+            scopes.update(configured_scopes)
 
         return scopes
