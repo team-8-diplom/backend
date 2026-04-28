@@ -1,4 +1,4 @@
-from typing import List, Annotated
+from typing import Annotated, List
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Security, status
@@ -28,9 +28,9 @@ async def get_students(service: StudentServiceDep):
     dependencies=[Security(require_permission, scopes=['students:create'])],
 )
 async def create_student(
-        student: StudentCreate,
-        service: StudentServiceDep,
-        current_user: Annotated[User, Security(require_permission)]
+    student: StudentCreate,
+    service: StudentServiceDep,
+    current_user: Annotated[User, Security(require_permission)],
 ):
     created = await service.create(student, user_id=current_user.id)
     return StudentPublic.model_validate(created)

@@ -3,10 +3,8 @@ from contextlib import asynccontextmanager
 from fastapi import APIRouter, FastAPI
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core import settings
 from app.core.bootstrap import AuthBootstrap
 from app.db import engine
-from app.dependencies.session import get_session
 from app.routers import (
     applications,
     auth,
@@ -21,7 +19,6 @@ from app.routers import (
     user_skills,
     users,
 )
-
 from app.services.roles import PermissionService, RoleService
 from app.services.users import UserService
 
@@ -36,6 +33,7 @@ async def lifespan(_: FastAPI):
         )
         await bootstrap.bootstrap()
     yield
+
 
 app = FastAPI(title='Team 8 Project', version='0.1.0', lifespan=lifespan)
 

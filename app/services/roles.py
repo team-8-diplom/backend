@@ -1,18 +1,15 @@
 from typing import List, Optional, Set
 from uuid import UUID
 
-from fastapi import Depends
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from app.core import settings
 from app.db.repository import Repository
-from app.dependencies.session import get_session
+from app.dependencies.session import SessionDep
 from app.models.roles import Permission, Role, RolePermission, UserRoleLink
 from app.models.users import User
 
 
 class PermissionService:
-    def __init__(self, session: AsyncSession):
+    def __init__(self, session: SessionDep):
         self._repository = Repository(session=session, model=Permission)
 
     async def get_all(self) -> List[Permission]:
@@ -44,7 +41,7 @@ class PermissionService:
 
 
 class RoleService:
-    def __init__(self, session: AsyncSession = Depends(get_session)):
+    def __init__(self, session: SessionDep):
         self._repository = Repository(session=session, model=Role)
         self._permission_repository = Repository(session=session, model=Permission)
         self._role_permission_repository = Repository(
@@ -79,11 +76,11 @@ class RoleService:
         return saved_role
 
     async def get_or_create(
-            self,
-            name: str,
-            description: Optional[str] = None,
-            is_default: bool = False,
-            permission_scopes: Optional[List[str]] = None,
+        self,
+        name: str,
+        description: Optional[str] = None,
+        is_default: bool = False,
+        permission_scopes: Optional[List[str]] = None,
     ) -> Role:
         existing = await self.get_by_name(name)
         if existing:
@@ -132,7 +129,7 @@ class RoleService:
             return []
         return list(user.roles)
 
-    async def get_user_permissions(self, user_id: UUID) -> Set[str]:
+    async def get_user_permissions(self, user_id: UUID)-> Set[str]:
         user = await self._user_repository.get_by_id(user_id)
         if user is None:
             return set()

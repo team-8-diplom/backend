@@ -26,7 +26,13 @@ class AuthBootstrapSettings(BaseModel):
     default_user_role: str = 'public'
 
     bootstrap_roles: dict = {
-        'public': ['users:read:own', 'topics:read', 'skills:read', 'students:create', 'teachers:create'],
+        'public': [
+            'users:read:own',
+            'topics:read',
+            'skills:read',
+            'students:create',
+            'teachers:create',
+        ],
         'student': [
             'topics:create',
             'topics:update',
