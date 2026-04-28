@@ -1,21 +1,31 @@
 from typing import List
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Security, status
 
+from app.dependencies.rbac import require_permission
 from app.dependencies.services import DepartmentServiceDep
 from app.models.departments import DepartmentCreate, DepartmentPublic, DepartmentUpdate
 
 router = APIRouter(prefix='/departments', tags=['Departments'])
 
 
-@router.get('/', response_model=List[DepartmentPublic])
+@router.get(
+    '/',
+    response_model=List[DepartmentPublic],
+    dependencies=[Security(require_permission, scopes=['departments:read'])],
+)
 async def get_departments(service: DepartmentServiceDep):
     items = await service.get_all()
     return [DepartmentPublic.model_validate(item) for item in items]
 
 
-@router.post('/', response_model=DepartmentPublic, status_code=status.HTTP_201_CREATED)
+@router.post(
+    '/',
+    response_model=DepartmentPublic,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Security(require_permission, scopes=['departments:create'])],
+)
 async def create_department(
     department: DepartmentCreate, service: DepartmentServiceDep
 ):
@@ -23,7 +33,11 @@ async def create_department(
     return DepartmentPublic.model_validate(created)
 
 
-@router.get('/{dept_id}', response_model=DepartmentPublic)
+@router.get(
+    '/{dept_id}',
+    response_model=DepartmentPublic,
+    dependencies=[Security(require_permission, scopes=['departments:read'])],
+)
 async def get_department(dept_id: UUID, service: DepartmentServiceDep):
     item = await service.get(dept_id)
     if not item:
@@ -33,7 +47,11 @@ async def get_department(dept_id: UUID, service: DepartmentServiceDep):
     return DepartmentPublic.model_validate(item)
 
 
-@router.patch('/{dept_id}', response_model=DepartmentPublic)
+@router.patch(
+    '/{dept_id}',
+    response_model=DepartmentPublic,
+    dependencies=[Security(require_permission, scopes=['departments:update'])],
+)
 async def update_department(
     dept_id: UUID, department: DepartmentUpdate, service: DepartmentServiceDep
 ):
@@ -45,7 +63,11 @@ async def update_department(
     return DepartmentPublic.model_validate(updated)
 
 
-@router.delete('/{dept_id}', status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    '/{dept_id}',
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Security(require_permission, scopes=['departments:delete'])],
+)
 async def delete_department(dept_id: UUID, service: DepartmentServiceDep):
     deleted = await service.delete(dept_id)
     if not deleted:

@@ -1,10 +1,11 @@
-from contextlib import suppress
 from typing import List, Optional, Set
 from uuid import UUID
 
+from app.core import settings
 from app.db.repository import Repository
 from app.dependencies.session import SessionDep
 from app.models.roles import Permission, Role, RolePermission, UserRoleLink
+from app.models.users import User
 
 
 class PermissionService:
@@ -47,6 +48,7 @@ class RoleService:
             session=session, model=RolePermission
         )
         self._user_role_repository = Repository(session=session, model=UserRoleLink)
+        self._user_repository = Repository(session=session, model=User)
 
     async def get_all(self) -> List[Role]:
         return await self._repository.fetch()
@@ -64,7 +66,6 @@ class RoleService:
         is_default: bool = False,
         permission_scopes: Optional[List[str]] = None,
     ) -> Role:
-        # Создаем роль через репозиторий
         saved_role = await self._repository.create(
             {'name': name, 'description': description, 'is_default': is_default}
         )
@@ -74,6 +75,26 @@ class RoleService:
 
         return saved_role
 
+    async def get_or_create(
+        self,
+        name: str,
+        description: Optional[str] = None,
+        is_default: bool = False,
+        permission_scopes: Optional[List[str]] = None,
+    ) -> Role:
+        existing = await self.get_by_name(name)
+        if existing:
+            if permission_scopes:
+                await self.add_permissions_to_role(existing.id, permission_scopes)
+            return existing
+
+        return await self.create(
+            name=name,
+            description=description,
+            is_default=is_default,
+            permission_scopes=permission_scopes,
+        )
+
     async def add_permissions_to_role(
         self, role_id: UUID, permission_scopes: List[str]
     ) -> Role:
@@ -81,16 +102,20 @@ class RoleService:
         if not role:
             raise ValueError(f'Role with id {role_id} not found')
 
+        existing_links = await self._role_permission_repository.fetch_by_field(
+            'role_id', role_id
+        )
+        existing_permission_ids = {link.permission_id for link in existing_links}
+
         for scope in permission_scopes:
             permission = await self._permission_repository.get_by_field('scope', scope)
-            if permission:
-                with suppress(Exception):
-                    # Используем метод create репозитория связей
-                    await self._role_permission_repository.create(
-                        {'role_id': role_id, 'permission_id': permission.id}
-                    )
+            if not permission or permission.id in existing_permission_ids:
+                continue
 
-        # Чтобы вернуть обновленную роль с подгруженными связями через репозиторий:
+            await self._role_permission_repository.create(
+                {'role_id': role_id, 'permission_id': permission.id}
+            )
+
         return await self._repository.get_by_id(role_id)
 
     async def assign_role_to_user(self, user_id: UUID, role_id: UUID) -> UserRoleLink:
@@ -99,27 +124,57 @@ class RoleService:
         )
 
     async def get_user_roles(self, user_id: UUID) -> List[Role]:
-        # Так как текущий Repository не поддерживает Join, временно
-        # используем fetch_by_field у репозитория связей и достаем роли.
-        # В идеале — добавить метод filter в базовый репозиторий.
-        links = await self._user_role_repository.fetch_by_field('user_id', user_id)
-        roles = []
-        for link in links:
-            role = await self._repository.get_by_id(link.role_id)
-            if role:
-                roles.append(role)
-        return roles
+        user = await self._user_repository.get_by_id(user_id)
+        if not user:
+            return []
+        return list(user.roles)
 
     async def get_user_permissions(self, user_id: UUID) -> Set[str]:
-        """Получаем все scope разрешений пользователя через репозитории."""
-        roles = await self.get_user_roles(user_id)
-        scopes = set()
-        for role in roles:
-            links = await self._role_permission_repository.fetch_by_field(
-                'role_id', role.id
+        user = await self._user_repository.get_by_id(user_id)
+        if user is None:
+            return set()
+
+        user_role_links = await self._user_role_repository.fetch_by_field(
+            'user_id', user_id
+        )
+        role_ids = [link.role_id for link in user_role_links]
+        role_names: Set[str] = set()
+
+        if not role_ids:
+            default_role_name = settings.auth_bootstrap.default_user_role
+            role_names.add(default_role_name)
+            default_role = await self._repository.get_by_field(
+                'name', default_role_name
             )
-            for link in links:
-                perm = await self._permission_repository.get_by_id(link.permission_id)
-                if perm:
-                    scopes.add(perm.scope)
+            if default_role:
+                role_ids = [default_role.id]
+        else:
+            for role_id in role_ids:
+                role = await self._repository.get_by_id(role_id)
+                if role:
+                    role_names.add(role.name)
+
+        role_permission_links: List[RolePermission] = []
+        for role_id in role_ids:
+            links = await self._role_permission_repository.fetch_by_field(
+                'role_id', role_id
+            )
+            role_permission_links.extend(links)
+
+        permission_ids = {link.permission_id for link in role_permission_links}
+        scopes: Set[str] = set()
+        for permission_id in permission_ids:
+            permission = await self._permission_repository.get_by_id(permission_id)
+            if permission:
+                scopes.add(permission.scope)
+
+        if scopes:
+            return scopes
+
+        for role_name in role_names:
+            configured_scopes = settings.auth_bootstrap.bootstrap_roles.get(
+                role_name, []
+            )
+            scopes.update(configured_scopes)
+
         return scopes

@@ -1,8 +1,7 @@
 from datetime import datetime, timezone
-from enum import StrEnum
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, List, Optional, Set
 
-from pydantic import EmailStr
+from pydantic import EmailStr, computed_field
 from sqlmodel import Field, Relationship, SQLModel
 
 from app.models.roles import UserRoleLink
@@ -13,15 +12,8 @@ if TYPE_CHECKING:
     from app.models.roles import Role
 
 
-class UserRole(StrEnum):
-    STUDENT = 'student'
-    TEACHER = 'teacher'
-    ADMIN = 'admin'
-
-
 class UserBase(SQLModel):
     email: EmailStr = Field(index=True, unique=True, max_length=255)
-    role: UserRole = Field(default=UserRole.STUDENT)
 
 
 class UserCreate(SQLModel):
@@ -31,7 +23,6 @@ class UserCreate(SQLModel):
 
 class UserUpdate(SQLModel):
     email: Optional[EmailStr] = None
-    role: Optional[UserRole] = None
     password: Optional[str] = None
 
 
@@ -47,4 +38,17 @@ class User(Base, UserBase, table=True):
         default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None)
     )
 
-    roles: List['Role'] = Relationship(back_populates='users', link_model=UserRoleLink)
+    # ИЗМЕНЕННАЯ СТРОКА:
+    roles: List['Role'] = Relationship(
+        back_populates='users',
+        link_model=UserRoleLink,
+        sa_relationship_kwargs={'lazy': 'selectin'},
+    )
+
+    @computed_field
+    @property
+    def permission_scopes(self) -> Set[str]:
+        # Теперь self.roles будет доступен без ошибки
+        return {
+            permission.scope for role in self.roles for permission in role.permissions
+        }

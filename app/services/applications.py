@@ -8,7 +8,6 @@ from app.models.applications import Application, ApplicationCreate, ApplicationU
 
 class ApplicationService:
     def __init__(self, session: SessionDep):
-        # Передаем модель User в репозиторий
         self.__repository = Repository(session=session, model=Application)
 
     async def get_all(self):
