@@ -12,6 +12,7 @@ from app.dependencies.services import (
     UserServiceDep,
 )
 from app.models import AccessTokenResponse, UserCreate, UserPublic
+from app.models.refresh_sessions import RefreshTokenResponse
 from app.services.auth import LoginRequest
 
 router = APIRouter(prefix='/auth', tags=['Authentication'])
@@ -58,11 +59,7 @@ async def login(
         max_age=auth_result.refresh_token_max_age,
         path='/',
     )
-
-    return {
-        'access_token': auth_result.access_token,
-        'token_type': 'bearer',
-    }
+    return AccessTokenResponse(access_token=auth_result.access_token)
 
 
 @router.get('/me', response_model=UserPublic)
@@ -125,7 +122,4 @@ async def refresh_tokens(
         path='/',
     )
 
-    return {
-        'access_token': auth_result.access_token,
-        'token_type': 'bearer',
-    }
+    return RefreshTokenResponse(access_token=auth_result.access_token)
