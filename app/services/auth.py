@@ -3,7 +3,6 @@ from typing import Optional
 from uuid import UUID
 
 from fastapi import HTTPException, status
-from pydantic import BaseModel, EmailStr
 
 from app.core.security import (
     create_access_token,
@@ -13,19 +12,9 @@ from app.core.security import (
 )
 from app.core.settings import settings
 from app.models import User, UserCreate
+from app.models.auth import LoginRequest, TokenPairResponse
 from app.models.refresh_sessions import RefreshSessionCreate
 from app.services.refresh_sessions import RefreshSessionService
-
-
-class LoginRequest(BaseModel):
-    email: EmailStr
-    password: str
-
-
-class TokenPairResponse(BaseModel):
-    access_token: str
-    refresh_token: str
-    refresh_token_max_age: int
 
 
 class AuthService:
