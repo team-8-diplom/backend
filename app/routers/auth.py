@@ -46,8 +46,11 @@ async def login(
     response: Response,
 ):
     """Логин и установка Refresh Token в httponly cookie."""
-    login_data = LoginRequest(email=form_data.username, password=form_data.password)
-    auth_result = await service.login(login_data, user_service, refresh_session_service)
+    auth_result = await service.login(
+        LoginRequest(email=form_data.username, password=form_data.password),
+        user_service,
+        refresh_session_service,
+    )
 
     response.set_cookie(
         key='refresh_token',
