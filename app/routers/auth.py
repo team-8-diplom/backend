@@ -12,6 +12,7 @@ from app.dependencies.services import (
     UserServiceDep,
 )
 from app.models import AccessTokenResponse, UserCreate, UserPublic
+from app.models.refresh_sessions import RefreshTokenResponse
 from app.services.auth import LoginRequest
 
 router = APIRouter(prefix='/auth', tags=['Authentication'])
