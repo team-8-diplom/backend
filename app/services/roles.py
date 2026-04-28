@@ -129,7 +129,7 @@ class RoleService:
             return []
         return list(user.roles)
 
-    async def get_user_permissions(self, user_id: UUID)-> Set[str]:
+    async def get_user_permissions(self, user_id: UUID) -> Set[str]:
         user = await self._user_repository.get_by_id(user_id)
         if user is None:
             return set()
