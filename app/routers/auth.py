@@ -12,7 +12,6 @@ from app.dependencies.services import (
     UserServiceDep,
 )
 from app.models import AccessTokenResponse, UserCreate, UserPublic
-from app.models.refresh_sessions import RefreshTokenResponse
 from app.services.auth import LoginRequest
 
 router = APIRouter(prefix='/auth', tags=['Authentication'])
@@ -47,8 +46,11 @@ async def login(
     response: Response,
 ):
     """Логин и установка Refresh Token в httponly cookie."""
-    login_data = LoginRequest(email=form_data.username, password=form_data.password)
-    auth_result = await service.login(login_data, user_service, refresh_session_service)
+    auth_result = await service.login(
+        LoginRequest(email=form_data.username, password=form_data.password),
+        user_service,
+        refresh_session_service,
+    )
 
     response.set_cookie(
         key='refresh_token',
@@ -122,4 +124,4 @@ async def refresh_tokens(
         path='/',
     )
 
-    return RefreshTokenResponse(access_token=auth_result.access_token)
+    return AccessTokenResponse(access_token=auth_result.access_token)

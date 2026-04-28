@@ -1,19 +1,9 @@
 from datetime import datetime, timezone
 from uuid import UUID
 
-from pydantic import BaseModel
 from sqlmodel import Field, SQLModel
 
 from .base import Base
-
-
-class AccessTokenResponse(BaseModel):
-    access_token: str
-    token_type: str = 'bearer'
-
-
-class RefreshTokenResponse(AccessTokenResponse):
-    pass
 
 
 class RefreshSessionBase(SQLModel):
