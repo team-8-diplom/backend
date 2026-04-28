@@ -37,7 +37,7 @@ async def lifespan(_: FastAPI):
         await bootstrap.bootstrap()
     yield
 
-app = FastAPI(title='Team 8 Project', version='0.1.0')
+app = FastAPI(title='Team 8 Project', version='0.1.0', lifespan=lifespan)
 
 api_router = APIRouter(prefix='/api/v1')
 

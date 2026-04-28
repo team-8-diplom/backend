@@ -56,12 +56,15 @@ class AuthBootstrap:
     async def _bootstrap_admin_user(self) -> None:
         """Создать admin пользователя и гарантировать назначение admin-роли."""
         admin_email = settings.auth_bootstrap.admin_email
-        admin_role = await self._role_service.get_by_name('admin')
-        if not admin_role:
+        admin_role_obj = await self._role_service.get_by_name('admin')
+
+        if not admin_role_obj:
             logger.warning('Admin role not found during bootstrap')
             return
 
-        # Работаем только через публичные методы сервиса
+        # Сразу сохраняем ID в переменную, чтобы не обращаться к атрибуту объекта позже
+        admin_role_id = admin_role_obj.id
+
         existing_admin = await self._user_service.get_by_email(admin_email)
 
         if not existing_admin:
@@ -70,10 +73,12 @@ class AuthBootstrap:
                 password=settings.auth_bootstrap.admin_password,
             )
             admin_user = await self._user_service.create(admin_data)
-            await self._user_service.assign_role(admin_user.id, admin_role.id)
+            # Здесь тоже используем ID только что созданного пользователя
+            await self._user_service.assign_role(admin_user.id, admin_role_id)
             logger.info(f'Created admin user: {admin_email}')
         else:
-            await self._user_service.assign_role(existing_admin.id, admin_role.id)
+            # И здесь используем заранее сохраненный admin_role_id
+            await self._user_service.assign_role(existing_admin.id, admin_role_id)
             logger.info(f'Admin user already exists and role verified: {admin_email}')
 
     async def _bootstrap_default_roles_for_users(self) -> None:
