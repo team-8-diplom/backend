@@ -1,7 +1,7 @@
 from functools import lru_cache
-from pydantic import BaseModel, Field
+
+from pydantic import BaseModel
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from fastapi.security import OAuth2PasswordBearer
 
 
 class DatabaseSettings(BaseModel):
@@ -11,11 +11,6 @@ class DatabaseSettings(BaseModel):
     db_password: str = 'pass'
     db_port: int = 5433
     db_name: str = 'db'
-
-    @property
-    def url(self) -> str:
-        """Собирает строку подключения из настроек."""
-        return f"{self.db_schema}://{self.db_user}:{self.db_password}@{self.db_host}:{self.db_port}/{self.db_name}"
 
 
 class AuthSettings(BaseModel):
@@ -32,8 +27,17 @@ class AuthBootstrapSettings(BaseModel):
 
     bootstrap_roles: dict = {
         'public': ['users:read:own', 'topics:read', 'skills:read'],
-        'admin': ['users:*', 'roles:*', 'permissions:*', 'topics:*', 'skills:*',
-                  'teachers:*', 'students:*', 'applications:*', 'departments:*']
+        'admin': [
+            'users:*',
+            'roles:*',
+            'permissions:*',
+            'topics:*',
+            'skills:*',
+            'teachers:*',
+            'students:*',
+            'applications:*',
+            'departments:*',
+        ],
     }
 
 
@@ -42,11 +46,10 @@ class Settings(BaseSettings):
     auth: AuthSettings = AuthSettings()
     auth_bootstrap: AuthBootstrapSettings = AuthBootstrapSettings()
 
-    # env_nested_delimiter позволяет парсить DATABASE__DB_HOST в database.db_host
     model_config = SettingsConfigDict(
         env_file='.env',
         env_nested_delimiter='__',
-        extra='ignore'  # Игнорировать лишние переменные в .env
+        extra='ignore',
     )
 
 
@@ -56,5 +59,3 @@ def get_settings() -> Settings:
 
 
 settings = get_settings()
-# Не забудьте обновить путь к логину, если он отличается
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/auth/login")

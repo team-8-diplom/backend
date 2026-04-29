@@ -45,6 +45,9 @@ select = [
     "N",
     "W"
 ]
+ignore = [
+    "SLF001",
+]
 
 [tool.ruff.format]
 quote-style = "single"

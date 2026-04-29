@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 from uuid import UUID
 
@@ -11,31 +11,27 @@ from app.core.security import (
     decode_jwt_token,
     get_user_id_from_token,
 )
+from app.core.settings import settings
 from app.models import User, UserCreate
+from app.models.refresh_sessions import RefreshSessionCreate
 from app.services.refresh_sessions import RefreshSessionService
-from app.models.refresh_sessions import RefreshSessionCreate # Вынес из методов
-from app.core.settings import settings # Вынес из методов
+
 
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str
 
-class AuthResponse(BaseModel):
+
+class TokenPairResponse(BaseModel):
     access_token: str
     refresh_token: str
     refresh_token_max_age: int
 
-class RefreshResponse(BaseModel):
-    access_token: str
-    refresh_token: str
-    refresh_token_max_age: int
 
 class AuthService:
     """Сервис для управления аутентификацией."""
 
-    async def register(
-        self, user_data: UserCreate, user_service # Исправлено имя аргумента
-    ) -> User:
+    async def register(self, user_data: UserCreate, user_service) -> User:
         existing_user = await user_service.get_by_email(user_data.email)
         if existing_user:
             raise HTTPException(
@@ -44,21 +40,13 @@ class AuthService:
             )
         return await user_service.create(user_data)
 
-    async def login(
+    async def _issue_token_pair(
         self,
-        login_data: LoginRequest, # Исправлено имя аргумента
-        user_service,
+        user_id: UUID,
         refresh_session_service: RefreshSessionService,
-    ) -> AuthResponse:
-        user = await user_service.authenticate(login_data.email, login_data.password)
-        if not user:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail='Invalid email or password',
-            )
-
-        access_token = create_access_token(user.id)
-        refresh_token = create_refresh_token(user.id)
+    ) -> TokenPairResponse:
+        access_token = create_access_token(user_id)
+        refresh_token = create_refresh_token(user_id)
 
         refresh_payload = decode_jwt_token(refresh_token, token_type='refresh')
         if not refresh_payload:
@@ -67,26 +55,44 @@ class AuthService:
                 detail='Failed to generate refresh token',
             )
 
-        expires_at = datetime.fromtimestamp(refresh_payload['exp'], tz=timezone.utc).replace(tzinfo=None)
+        expires_at = datetime.fromtimestamp(
+            refresh_payload['exp'], tz=timezone.utc
+        ).replace(tzinfo=None)
         await refresh_session_service.create(
             RefreshSessionCreate(
-                user_id=user.id,
+                user_id=user_id,
                 token_jti=refresh_payload['jti'],
                 expires_at=expires_at,
             )
         )
 
-        return AuthResponse(
+        refresh_token_max_age = int(
+            timedelta(
+                days=settings.auth.jwt_refresh_token_lifetime_days
+            ).total_seconds()
+        )
+        return TokenPairResponse(
             access_token=access_token,
             refresh_token=refresh_token,
-            refresh_token_max_age=settings.auth.jwt_refresh_token_lifetime_days * 24 * 60 * 60,
+            refresh_token_max_age=refresh_token_max_age,
         )
 
+    async def login(
+        self,
+        login_data: LoginRequest,
+        user_service,
+        refresh_session_service: RefreshSessionService,
+    ) -> TokenPairResponse:
+        user = await user_service.authenticate(login_data.email, login_data.password)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail='Invalid email or password',
+            )
+
+        return await self._issue_token_pair(user.id, refresh_session_service)
+
     async def get_current_user(self, token: str, user_service) -> User:
-        """
-        ИСПРАВЛЕНО: токен должен передаваться из Dependency Injection FastAPI,
-        а не извлекаться из пустого объекта Request.
-        """
         user_id = get_user_id_from_token(token, token_type='access')
         if not user_id:
             raise HTTPException(
@@ -97,7 +103,8 @@ class AuthService:
         user = await user_service.get(user_id)
         if not user:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail='User not found'
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail='User not found',
             )
         return user
 
@@ -126,7 +133,7 @@ class AuthService:
         refresh_token: Optional[str],
         user_service,
         refresh_session_service: RefreshSessionService,
-    ) -> RefreshResponse:
+    ) -> TokenPairResponse:
         if not refresh_token:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -143,37 +150,20 @@ class AuthService:
         jti = payload['jti']
         user_id = UUID(payload['sub'])
 
-        session = await refresh_session_service.get_by_jti(jti)
-        if not session or session.user_id != user_id:
+        is_valid = await refresh_session_service.is_valid_session(jti, user_id)
+        if not is_valid:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail='Refresh session not found or invalid',
             )
 
-        # Удаляем старую сессию (Rotation)
         await refresh_session_service.invalidate(jti)
 
         user = await user_service.get(user_id)
         if not user:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail='User not found'
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail='User not found',
             )
 
-        new_access_token = create_access_token(user.id)
-        new_refresh_token = create_refresh_token(user.id)
-        new_payload = decode_jwt_token(new_refresh_token, token_type='refresh')
-
-        expires_at = datetime.fromtimestamp(new_payload['exp'], tz=timezone.utc).replace(tzinfo=None)
-        await refresh_session_service.create(
-            RefreshSessionCreate(
-                user_id=user.id,
-                token_jti=new_payload['jti'],
-                expires_at=expires_at,
-            )
-        )
-
-        return RefreshResponse(
-            access_token=new_access_token,
-            refresh_token=new_refresh_token,
-            refresh_token_max_age=settings.auth.jwt_refresh_token_lifetime_days * 24 * 60 * 60,
-        )
+        return await self._issue_token_pair(user.id, refresh_session_service)
