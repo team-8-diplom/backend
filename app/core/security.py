@@ -7,7 +7,6 @@ from fastapi.security import OAuth2PasswordBearer
 from pwdlib import PasswordHash
 
 from app.core.settings import settings
-
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl='api/v1/auth/login')
 
 pwd_context = PasswordHash.recommended()
