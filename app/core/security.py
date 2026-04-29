@@ -7,7 +7,68 @@ from fastapi.security import OAuth2PasswordBearer
 from pwdlib import PasswordHash
 
 from app.core.settings import settings
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl='api/v1/auth/login')
+
+ROUTE_SCOPES = {
+    'applications:read',
+    'applications:create',
+    'applications:update',
+    'applications:delete',
+    'departments:read',
+    'departments:create',
+    'departments:update',
+    'departments:delete',
+    'saved_topics:read',
+    'saved_topics:create',
+    'saved_topics:update',
+    'saved_topics:delete',
+    'skills:read',
+    'skills:create',
+    'skills:update',
+    'skills:delete',
+    'students:read',
+    'students:create',
+    'students:update',
+    'students:delete',
+    'teachers:read',
+    'teachers:create',
+    'teachers:update',
+    'teachers:delete',
+    'topic_skills:read',
+    'topic_skills:create',
+    'topic_skills:update',
+    'topic_skills:delete',
+    'topics:read',
+    'topics:create',
+    'topics:update',
+    'topics:delete',
+    'user_skills:read',
+    'user_skills:create',
+    'user_skills:update',
+    'user_skills:delete',
+    'users:read',
+    'users:create',
+    'users:update',
+    'users:delete',
+    'users:read:own',
+    'users:roles:read',
+    'users:roles:update',
+}
+
+AVAILABLE_SCOPES = {
+    scope: f'Permission scope {scope}'
+    for scope in ROUTE_SCOPES.union(
+        {
+            scope
+            for scopes in settings.auth_bootstrap.bootstrap_roles.values()
+            for scope in scopes
+        }
+    )
+}
+
+oauth2_scheme = OAuth2PasswordBearer(
+    tokenUrl='api/v1/auth/login',
+    scopes=AVAILABLE_SCOPES,
+)
 
 pwd_context = PasswordHash.recommended()
 

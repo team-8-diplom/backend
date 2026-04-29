@@ -1,18 +1,17 @@
 from typing import List, Optional
 from uuid import UUID
 
-from sqlmodel import select
-
 from app.core.security import hash_password, verify_password
 from app.db.repository import Repository
 from app.dependencies.session import SessionDep
-from app.models import User, UserCreate, UserRole, UserUpdate
+from app.models import User, UserCreate, UserUpdate
 from app.models.roles import UserRoleLink
 
 
 class UserService:
     def __init__(self, session: SessionDep):
         self._repository = Repository(session=session, model=User)
+        self._role_link_repo = Repository(session=session, model=UserRoleLink)
 
     async def get_all(self) -> List[User]:
         return await self._repository.fetch()
@@ -21,17 +20,15 @@ class UserService:
         return await self._repository.get_by_id(user_id)
 
     async def get_by_email(self, email: str) -> Optional[User]:
-        statement = select(User).where(User.email == email)
-        results = await self._repository.session.exec(statement)
-        return results.first()
+        return await self._repository.get_by_field('email', email)
 
     async def create(self, data: UserCreate) -> User:
-        user = User(
-            email=data.email,
-            password_hash=hash_password(data.password),
-            role=UserRole.STUDENT,
-        )
-        return await self._repository.save(user)
+        user_data = {
+            'email': data.email,
+            'password_hash': hash_password(data.password),
+        }
+        # Используем метод create репозитория, который принимает dict
+        return await self._repository.create(user_data)
 
     async def update(self, user_id: UUID, data: UserUpdate) -> Optional[User]:
         update_data = data.model_dump(exclude_unset=True)
@@ -50,19 +47,13 @@ class UserService:
         return user
 
     async def assign_role(self, user_id: UUID, role_id: UUID) -> bool:
+        # Проверяем существование пользователя через репозиторий
         user = await self.get(user_id)
         if not user:
             return False
-
-        stmt = select(UserRoleLink).where(
-            UserRoleLink.user_id == user_id,
-            UserRoleLink.role_id == role_id,
-        )
-        result = await self._repository.session.exec(stmt)
-        if result.first():
+        existing_links = await self._role_link_repo.fetch_by_field('user_id', user_id)
+        if any(link.role_id == role_id for link in existing_links):
             return True
 
-        user_role_link = UserRoleLink(user_id=user_id, role_id=role_id)
-        self._repository.session.add(user_role_link)
-        await self._repository.session.commit()
+        await self._role_link_repo.create({'user_id': user_id, 'role_id': role_id})
         return True

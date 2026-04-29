@@ -21,23 +21,53 @@ class AuthSettings(BaseModel):
 
 
 class AuthBootstrapSettings(BaseModel):
-    admin_email: str = 'admin@example.com'
+    admin_email: str = 'admin@admin.com'
     admin_password: str = 'admin123'
     default_user_role: str = 'public'
 
     bootstrap_roles: dict = {
-        'public': ['users:read:own', 'topics:read', 'skills:read'],
-        'admin': [
-            'users:*',
-            'roles:*',
-            'permissions:*',
-            'topics:*',
-            'skills:*',
-            'teachers:*',
-            'students:*',
-            'applications:*',
-            'departments:*',
+        'public': [
+            'users:read:own',
+            'topics:read',
+            'skills:read',
+            'students:create',
+            'teachers:create',
         ],
+        'student': [
+            'topics:create',
+            'topics:update',
+            'topics:delete',
+            'saved_topics:read',
+            'saved_topics:create',
+            'saved_topics:update',
+            'saved_topics:delete',
+            'applications:read',
+            'applications:create',
+            'applications:update',
+            'applications:delete',
+            'user_skills:read',
+            'user_skills:create',
+            'user_skills:update',
+            'user_skills:delete',
+        ],
+        'teacher': [
+            'topics:create',
+            'topics:update',
+            'topics:delete',
+            'saved_topics:read',
+            'saved_topics:create',
+            'saved_topics:update',
+            'saved_topics:delete',
+            'applications:read',
+            'applications:create',
+            'applications:update',
+            'applications:delete',
+            'user_skills:read',
+            'user_skills:create',
+            'user_skills:update',
+            'user_skills:delete',
+        ],
+        'admin': ['*'],
     }
 
 

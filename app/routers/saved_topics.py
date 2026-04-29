@@ -1,29 +1,44 @@
 from typing import List
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Security, status
 
+from app.dependencies.rbac import require_permission
 from app.dependencies.services import SavedTopicServiceDep
 from app.models.saved_topics import SavedTopicCreate, SavedTopicPublic, SavedTopicUpdate
 
 router = APIRouter(prefix='/saved-topics', tags=['SavedTopics'])
 
 
-@router.get('/', response_model=List[SavedTopicPublic])
+@router.get(
+    '/',
+    response_model=List[SavedTopicPublic],
+    dependencies=[Security(require_permission, scopes=['saved_topics:read'])],
+)
 async def get_saved_topics(service: SavedTopicServiceDep):
     items = await service.get_all()
     return [SavedTopicPublic.model_validate(item) for item in items]
 
 
-@router.post('/', response_model=SavedTopicPublic, status_code=status.HTTP_201_CREATED)
+@router.post(
+    '/',
+    response_model=SavedTopicPublic,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Security(require_permission, scopes=['saved_topics:create'])],
+)
 async def create_saved_topic(
-    saved_topic: SavedTopicCreate, service: SavedTopicServiceDep
+    saved_topic: SavedTopicCreate,
+    service: SavedTopicServiceDep,
 ):
     created = await service.create(saved_topic)
     return SavedTopicPublic.model_validate(created)
 
 
-@router.get('/{saved_id}', response_model=SavedTopicPublic)
+@router.get(
+    '/{saved_id}',
+    response_model=SavedTopicPublic,
+    dependencies=[Security(require_permission, scopes=['saved_topics:read'])],
+)
 async def get_saved_topic(saved_id: UUID, service: SavedTopicServiceDep):
     item = await service.get(saved_id)
     if not item:
@@ -33,7 +48,11 @@ async def get_saved_topic(saved_id: UUID, service: SavedTopicServiceDep):
     return SavedTopicPublic.model_validate(item)
 
 
-@router.patch('/{saved_id}', response_model=SavedTopicPublic)
+@router.patch(
+    '/{saved_id}',
+    response_model=SavedTopicPublic,
+    dependencies=[Security(require_permission, scopes=['saved_topics:update'])],
+)
 async def update_saved_topic(
     saved_id: UUID, saved_topic: SavedTopicUpdate, service: SavedTopicServiceDep
 ):
@@ -45,7 +64,11 @@ async def update_saved_topic(
     return SavedTopicPublic.model_validate(updated)
 
 
-@router.delete('/{saved_id}', status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    '/{saved_id}',
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Security(require_permission, scopes=['saved_topics:delete'])],
+)
 async def delete_saved_topic(saved_id: UUID, service: SavedTopicServiceDep):
     deleted = await service.delete(saved_id)
     if not deleted:
