@@ -38,7 +38,6 @@ class User(Base, UserBase, table=True):
         default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None)
     )
 
-    # ИЗМЕНЕННАЯ СТРОКА:
     roles: List['Role'] = Relationship(
         back_populates='users',
         link_model=UserRoleLink,

@@ -1,0 +1,3 @@
+[33md7ebc7a[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mfeat/error-handling-final[m[33m, [m[1;31morigin/feat/error-handling-final[m[33m)[m feat: error handling (logger, custom exceptions, middleware, global handler)
+[33m73c0886[m[33m ([m[1;31morigin/dev[m[33m, [m[1;32mdev[m[33m)[m feat: error handling (#35)
+[33m77c2f37[m Fix/task 1577173 (#43)

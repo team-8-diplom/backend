@@ -1,13 +1,15 @@
 from typing import List
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Security, status
+from fastapi import APIRouter, Security, status
 
 from app.dependencies.rbac import require_permission
 from app.dependencies.services import UserServiceDep
 from app.models.users import UserCreate, UserPublic, UserUpdate
+from app.utils.errors import NotFoundError
+from app.core.responses import detail_responses
 
-router = APIRouter(prefix='/users', tags=['Users'])
+router = APIRouter(prefix='/users', tags=['Users'], responses=detail_responses)
 
 
 @router.get(
@@ -16,8 +18,7 @@ router = APIRouter(prefix='/users', tags=['Users'])
     dependencies=[Security(require_permission, scopes=['users:read'])],
 )
 async def get_users(service: UserServiceDep):
-    items = await service.get_all()
-    return [UserPublic.model_validate(item) for item in items]
+    return await service.get_all()
 
 
 @router.post(
@@ -27,8 +28,7 @@ async def get_users(service: UserServiceDep):
     dependencies=[Security(require_permission, scopes=['users:create'])],
 )
 async def create_user(user: UserCreate, service: UserServiceDep):
-    created = await service.create(user)
-    return UserPublic.model_validate(created)
+    return await service.create(user)
 
 
 @router.get(
@@ -39,10 +39,8 @@ async def create_user(user: UserCreate, service: UserServiceDep):
 async def get_user(user_id: UUID, service: UserServiceDep):
     item = await service.get(user_id)
     if not item:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail='User not found'
-        )
-    return UserPublic.model_validate(item)
+        raise NotFoundError()
+    return item
 
 
 @router.patch(
@@ -50,13 +48,15 @@ async def get_user(user_id: UUID, service: UserServiceDep):
     response_model=UserPublic,
     dependencies=[Security(require_permission, scopes=['users:update'])],
 )
-async def update_user(user_id: UUID, user: UserUpdate, service: UserServiceDep):
+async def update_user(
+    user_id: UUID,
+    user: UserUpdate,
+    service: UserServiceDep,
+):
     updated = await service.update(user_id, user)
     if not updated:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail='User not found'
-        )
-    return UserPublic.model_validate(updated)
+        raise NotFoundError()
+    return updated
 
 
 @router.delete(
@@ -67,6 +67,4 @@ async def update_user(user_id: UUID, user: UserUpdate, service: UserServiceDep):
 async def delete_user(user_id: UUID, service: UserServiceDep):
     deleted = await service.delete(user_id)
     if not deleted:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail='User not found'
-        )
+        raise NotFoundError()
