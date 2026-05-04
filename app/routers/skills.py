@@ -1,13 +1,15 @@
 from typing import List
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Security, status
+from fastapi import APIRouter, Security, status
 
 from app.dependencies.rbac import require_permission
 from app.dependencies.services import SkillServiceDep
 from app.models.skills import SkillCreate, SkillPublic, SkillUpdate
+from app.utils.errors import NotFoundError
+from app.core.responses import detail_responses
 
-router = APIRouter(prefix='/skills', tags=['Skills'])
+router = APIRouter(prefix='/skills', tags=['Skills'], responses=detail_responses)
 
 
 @router.get(
@@ -16,8 +18,7 @@ router = APIRouter(prefix='/skills', tags=['Skills'])
     dependencies=[Security(require_permission, scopes=['skills:read'])],
 )
 async def get_skills(service: SkillServiceDep):
-    items = await service.get_all()
-    return [SkillPublic.model_validate(item) for item in items]
+    return await service.get_all()
 
 
 @router.post(
@@ -27,8 +28,7 @@ async def get_skills(service: SkillServiceDep):
     dependencies=[Security(require_permission, scopes=['skills:create'])],
 )
 async def create_skill(skill: SkillCreate, service: SkillServiceDep):
-    created = await service.create(skill)
-    return SkillPublic.model_validate(created)
+    return await service.create(skill)
 
 
 @router.get(
@@ -39,10 +39,8 @@ async def create_skill(skill: SkillCreate, service: SkillServiceDep):
 async def get_skill(skill_id: UUID, service: SkillServiceDep):
     item = await service.get(skill_id)
     if not item:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail='Skill not found'
-        )
-    return SkillPublic.model_validate(item)
+        raise NotFoundError()
+    return item
 
 
 @router.patch(
@@ -53,10 +51,8 @@ async def get_skill(skill_id: UUID, service: SkillServiceDep):
 async def update_skill(skill_id: UUID, skill: SkillUpdate, service: SkillServiceDep):
     updated = await service.update(skill_id, skill)
     if not updated:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail='Skill not found'
-        )
-    return SkillPublic.model_validate(updated)
+        raise NotFoundError()
+    return updated
 
 
 @router.delete(
@@ -67,6 +63,4 @@ async def update_skill(skill_id: UUID, skill: SkillUpdate, service: SkillService
 async def delete_skill(skill_id: UUID, service: SkillServiceDep):
     deleted = await service.delete(skill_id)
     if not deleted:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail='Skill not found'
-        )
+        raise NotFoundError()

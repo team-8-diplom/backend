@@ -1,7 +1,7 @@
 from typing import List
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Security, status
+from fastapi import APIRouter, Security, status
 
 from app.dependencies.rbac import require_permission
 from app.dependencies.services import ApplicationServiceDep
@@ -10,8 +10,10 @@ from app.models.applications import (
     ApplicationPublic,
     ApplicationUpdate,
 )
+from app.utils.errors import NotFoundError
+from app.core.responses import detail_responses
 
-router = APIRouter(prefix='/applications', tags=['Applications'])
+router = APIRouter(prefix='/applications', tags=['Applications'], responses=detail_responses)
 
 
 @router.get(
@@ -29,9 +31,7 @@ async def get_applications(service: ApplicationServiceDep):
     status_code=status.HTTP_201_CREATED,
     dependencies=[Security(require_permission, scopes=['applications:create'])],
 )
-async def create_application(
-    application: ApplicationCreate, service: ApplicationServiceDep
-):
+async def create_application(application: ApplicationCreate, service: ApplicationServiceDep):
     return await service.create(application)
 
 
@@ -43,10 +43,7 @@ async def create_application(
 async def get_application(app_id: UUID, service: ApplicationServiceDep):
     item = await service.get(app_id)
     if not item:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail='Application not found',
-        )
+        raise NotFoundError()
     return item
 
 
@@ -62,10 +59,7 @@ async def update_application(
 ):
     updated = await service.update(app_id, application)
     if not updated:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail='Application not found',
-        )
+        raise NotFoundError()
     return updated
 
 
@@ -77,7 +71,4 @@ async def update_application(
 async def delete_application(app_id: UUID, service: ApplicationServiceDep):
     deleted = await service.delete(app_id)
     if not deleted:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail='Application not found',
-        )
+        raise NotFoundError()

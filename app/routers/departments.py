@@ -1,13 +1,15 @@
 from typing import List
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Security, status
+from fastapi import APIRouter, Security, status
 
 from app.dependencies.rbac import require_permission
 from app.dependencies.services import DepartmentServiceDep
 from app.models.departments import DepartmentCreate, DepartmentPublic, DepartmentUpdate
+from app.utils.errors import NotFoundError
+from app.core.responses import detail_responses
 
-router = APIRouter(prefix='/departments', tags=['Departments'])
+router = APIRouter(prefix='/departments', tags=['Departments'], responses=detail_responses)
 
 
 @router.get(
@@ -16,8 +18,7 @@ router = APIRouter(prefix='/departments', tags=['Departments'])
     dependencies=[Security(require_permission, scopes=['departments:read'])],
 )
 async def get_departments(service: DepartmentServiceDep):
-    items = await service.get_all()
-    return [DepartmentPublic.model_validate(item) for item in items]
+    return await service.get_all()
 
 
 @router.post(
@@ -26,11 +27,8 @@ async def get_departments(service: DepartmentServiceDep):
     status_code=status.HTTP_201_CREATED,
     dependencies=[Security(require_permission, scopes=['departments:create'])],
 )
-async def create_department(
-    department: DepartmentCreate, service: DepartmentServiceDep
-):
-    created = await service.create(department)
-    return DepartmentPublic.model_validate(created)
+async def create_department(department: DepartmentCreate, service: DepartmentServiceDep):
+    return await service.create(department)
 
 
 @router.get(
@@ -41,10 +39,8 @@ async def create_department(
 async def get_department(dept_id: UUID, service: DepartmentServiceDep):
     item = await service.get(dept_id)
     if not item:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail='Department not found'
-        )
-    return DepartmentPublic.model_validate(item)
+        raise NotFoundError()
+    return item
 
 
 @router.patch(
@@ -53,14 +49,14 @@ async def get_department(dept_id: UUID, service: DepartmentServiceDep):
     dependencies=[Security(require_permission, scopes=['departments:update'])],
 )
 async def update_department(
-    dept_id: UUID, department: DepartmentUpdate, service: DepartmentServiceDep
+    dept_id: UUID,
+    department: DepartmentUpdate,
+    service: DepartmentServiceDep,
 ):
     updated = await service.update(dept_id, department)
     if not updated:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail='Department not found'
-        )
-    return DepartmentPublic.model_validate(updated)
+        raise NotFoundError()
+    return updated
 
 
 @router.delete(
@@ -71,6 +67,4 @@ async def update_department(
 async def delete_department(dept_id: UUID, service: DepartmentServiceDep):
     deleted = await service.delete(dept_id)
     if not deleted:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail='Department not found'
-        )
+        raise NotFoundError()

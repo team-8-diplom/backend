@@ -1,13 +1,15 @@
 from typing import List
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Security, status
+from fastapi import APIRouter, Security, status
 
 from app.dependencies.rbac import require_permission
 from app.dependencies.services import TopicServiceDep
 from app.models.topics import TopicCreate, TopicPublic, TopicUpdate
+from app.utils.errors import NotFoundError
+from app.core.responses import detail_responses
 
-router = APIRouter(prefix='/topics', tags=['Topics'])
+router = APIRouter(prefix='/topics', tags=['Topics'], responses=detail_responses)
 
 
 @router.get(
@@ -16,8 +18,7 @@ router = APIRouter(prefix='/topics', tags=['Topics'])
     dependencies=[Security(require_permission, scopes=['topics:read'])],
 )
 async def get_topics(service: TopicServiceDep):
-    items = await service.get_all()
-    return [TopicPublic.model_validate(item) for item in items]
+    return await service.get_all()
 
 
 @router.post(
@@ -26,12 +27,8 @@ async def get_topics(service: TopicServiceDep):
     status_code=status.HTTP_201_CREATED,
     dependencies=[Security(require_permission, scopes=['topics:create'])],
 )
-async def create_topic(
-    topic: TopicCreate,
-    service: TopicServiceDep,
-):
-    created = await service.create(topic)
-    return TopicPublic.model_validate(created)
+async def create_topic(topic: TopicCreate, service: TopicServiceDep):
+    return await service.create(topic)
 
 
 @router.get(
@@ -42,10 +39,8 @@ async def create_topic(
 async def get_topic(topic_id: UUID, service: TopicServiceDep):
     item = await service.get(topic_id)
     if not item:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail='Topic not found'
-        )
-    return TopicPublic.model_validate(item)
+        raise NotFoundError()
+    return item
 
 
 @router.patch(
@@ -53,13 +48,15 @@ async def get_topic(topic_id: UUID, service: TopicServiceDep):
     response_model=TopicPublic,
     dependencies=[Security(require_permission, scopes=['topics:update'])],
 )
-async def update_topic(topic_id: UUID, topic: TopicUpdate, service: TopicServiceDep):
+async def update_topic(
+    topic_id: UUID,
+    topic: TopicUpdate,
+    service: TopicServiceDep,
+):
     updated = await service.update(topic_id, topic)
     if not updated:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail='Topic not found'
-        )
-    return TopicPublic.model_validate(updated)
+        raise NotFoundError()
+    return updated
 
 
 @router.delete(
@@ -70,6 +67,4 @@ async def update_topic(topic_id: UUID, topic: TopicUpdate, service: TopicService
 async def delete_topic(topic_id: UUID, service: TopicServiceDep):
     deleted = await service.delete(topic_id)
     if not deleted:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail='Topic not found'
-        )
+        raise NotFoundError()

@@ -1,13 +1,15 @@
 from typing import List
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Security, status
+from fastapi import APIRouter, Security, status
 
 from app.dependencies.rbac import require_permission
 from app.dependencies.services import TeacherServiceDep
 from app.models.teachers import TeacherCreate, TeacherPublic, TeacherUpdate
+from app.utils.errors import NotFoundError
+from app.core.responses import detail_responses
 
-router = APIRouter(prefix='/teachers', tags=['Teachers'])
+router = APIRouter(prefix='/teachers', tags=['Teachers'], responses=detail_responses)
 
 
 @router.get(
@@ -16,8 +18,7 @@ router = APIRouter(prefix='/teachers', tags=['Teachers'])
     dependencies=[Security(require_permission, scopes=['teachers:read'])],
 )
 async def get_teachers(service: TeacherServiceDep):
-    items = await service.get_all()
-    return [TeacherPublic.model_validate(item) for item in items]
+    return await service.get_all()
 
 
 @router.post(
@@ -27,8 +28,7 @@ async def get_teachers(service: TeacherServiceDep):
     dependencies=[Security(require_permission, scopes=['teachers:create'])],
 )
 async def create_teacher(teacher: TeacherCreate, service: TeacherServiceDep):
-    created = await service.create(teacher)
-    return TeacherPublic.model_validate(created)
+    return await service.create(teacher)
 
 
 @router.get(
@@ -39,10 +39,8 @@ async def create_teacher(teacher: TeacherCreate, service: TeacherServiceDep):
 async def get_teacher(teacher_id: UUID, service: TeacherServiceDep):
     item = await service.get(teacher_id)
     if not item:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail='Teacher not found'
-        )
-    return TeacherPublic.model_validate(item)
+        raise NotFoundError()
+    return item
 
 
 @router.patch(
@@ -51,14 +49,14 @@ async def get_teacher(teacher_id: UUID, service: TeacherServiceDep):
     dependencies=[Security(require_permission, scopes=['teachers:update'])],
 )
 async def update_teacher(
-    teacher_id: UUID, teacher: TeacherUpdate, service: TeacherServiceDep
+    teacher_id: UUID,
+    teacher: TeacherUpdate,
+    service: TeacherServiceDep,
 ):
     updated = await service.update(teacher_id, teacher)
     if not updated:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail='Teacher not found'
-        )
-    return TeacherPublic.model_validate(updated)
+        raise NotFoundError()
+    return updated
 
 
 @router.delete(
@@ -69,6 +67,4 @@ async def update_teacher(
 async def delete_teacher(teacher_id: UUID, service: TeacherServiceDep):
     deleted = await service.delete(teacher_id)
     if not deleted:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail='Teacher not found'
-        )
+        raise NotFoundError()
