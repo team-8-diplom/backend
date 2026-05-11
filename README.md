@@ -98,17 +98,27 @@ http://127.0.0.1:8000/redoc
 
 | Название | Описание | Тип | Значение по умолчанию |
 | --- | --- | --- | --- |
-| DB_SCHEMA | Протокол подключения к БД | Строка, драйвер | postgresql+asyncpg |
-| DB_HOST | Хост БД | Строка | localhost |
-| DB_PORT | Порт БД | Число | 5432 |
-| DB_USER | Имя пользователя в БД | Строка | postgres |
-| DB_PASSWORD | Пароль БД | Строка | pass |
-| DB_NAME | Название БД | Строка | db |
-| JWT_SECRET_KEY | Секретный ключ для подписи JWT токенов (мин. 32 символа) | Строка | - |
-| JWT_ALGORITHM | Алгоритм шифрования JWT | Строка | HS256 |
-| JWT_ACCESS_TOKEN_LIFETIME_MINUTES | Время жизни access-токена в минутах | Число | 15 |
-| JWT_REFRESH_TOKEN_LIFETIME_DAYS | Время жизни refresh-токена в днях | Число | 7 |
+| DATABASE__SCHEMA | Протокол подключения к БД | Строка, драйвер | postgresql+asyncpg |
+| DATABASE__HOST | Хост БД | Строка | 127.0.0.1 |
+| DATABASE__PORT | Порт БД | Число | 5432 |
+| DATABASE__USER | Имя пользователя в БД | Строка | postgres |
+| DATABASE__PASSWORD | Пароль БД | Строка | pass |
+| DATABASE__NAME | Название БД | Строка | db |
+| AUTH__JWT_SECRET_KEY | Секретный ключ для подписи JWT токенов (мин. 32 символа) | Строка | secret-key-change-in-production |
+| AUTH__JWT_ALGORITHM | Алгоритм шифрования JWT | Строка | HS256 |
+| AUTH__JWT_ACCESS_TOKEN_LIFETIME_MINUTES | Время жизни access-токена в минутах | Число | 15 |
+| AUTH__JWT_REFRESH_TOKEN_LIFETIME_DAYS | Время жизни refresh-токена в днях | Число | 7 |
+| AUTH_BOOTSTRAP__ADMIN_EMAIL | Email bootstrap-администратора | Строка | admin@admin.com |
+| AUTH_BOOTSTRAP__ADMIN_PASSWORD | Пароль bootstrap-администратора | Строка | admin123 |
+| AUTH_BOOTSTRAP__DEFAULT_USER_ROLE | Роль, назначаемая новым пользователям по умолчанию | Строка | public |
+| AUTH_BOOTSTRAP__ADMIN_ROLE | Роль с административными правами | Строка | admin |
 
+### Bootstrap RBAC
+Карта ролей и разрешений хранится в `app/core/permissions.py`, а через переменные среды настраиваются только названия ролей и учетные данные bootstrap-администратора.
+
+```bash
+uv run python -m app.commands.bootstrap_auth
+```
 ### Запуск миграций
 ```bash
 uv run alembic upgrade head
