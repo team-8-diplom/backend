@@ -1,7 +1,7 @@
 from typing import List, Optional
 from uuid import UUID
 
-from app.core.security import hash_password, verify_password
+from app.core.passwords import hash_password, verify_password
 from app.db.repository import Repository
 from app.dependencies.session import SessionDep
 from app.models import User, UserCreate, UserUpdate

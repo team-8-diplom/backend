@@ -38,7 +38,6 @@ class User(Base, UserBase, table=True):
         default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None)
     )
 
-    # ИЗМЕНЕННАЯ СТРОКА:
     roles: List['Role'] = Relationship(
         back_populates='users',
         link_model=UserRoleLink,
@@ -48,7 +47,6 @@ class User(Base, UserBase, table=True):
     @computed_field
     @property
     def permission_scopes(self) -> Set[str]:
-        # Теперь self.roles будет доступен без ошибки
         return {
             permission.scope for role in self.roles for permission in role.permissions
         }

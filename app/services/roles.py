@@ -2,6 +2,7 @@ from typing import List, Optional, Set
 from uuid import UUID
 
 from app.core import settings
+from app.core.permissions import ROLE_PERMISSIONS
 from app.db.repository import Repository
 from app.dependencies.session import SessionDep
 from app.models.roles import Permission, Role, RolePermission, UserRoleLink
@@ -172,9 +173,7 @@ class RoleService:
             return scopes
 
         for role_name in role_names:
-            configured_scopes = settings.auth_bootstrap.bootstrap_roles.get(
-                role_name, []
-            )
+            configured_scopes = ROLE_PERMISSIONS.get(role_name, [])
             scopes.update(configured_scopes)
 
         return scopes

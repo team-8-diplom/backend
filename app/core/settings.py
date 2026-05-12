@@ -5,12 +5,12 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class DatabaseSettings(BaseModel):
-    db_schema: str = 'postgresql+asyncpg'
-    db_host: str = '127.0.0.1'
-    db_user: str = 'postgres'
-    db_password: str = 'pass'
-    db_port: int = 5433
-    db_name: str = 'db'
+    schema: str = 'postgresql+asyncpg'
+    host: str = '127.0.0.1'
+    user: str = 'postgres'
+    password: str = 'pass'
+    port: int = 5433
+    name: str = 'db'
 
 
 class AuthSettings(BaseModel):
@@ -24,51 +24,7 @@ class AuthBootstrapSettings(BaseModel):
     admin_email: str = 'admin@admin.com'
     admin_password: str = 'admin123'
     default_user_role: str = 'public'
-
-    bootstrap_roles: dict = {
-        'public': [
-            'users:read:own',
-            'topics:read',
-            'skills:read',
-            'students:create',
-            'teachers:create',
-        ],
-        'student': [
-            'topics:create',
-            'topics:update',
-            'topics:delete',
-            'saved_topics:read',
-            'saved_topics:create',
-            'saved_topics:update',
-            'saved_topics:delete',
-            'applications:read',
-            'applications:create',
-            'applications:update',
-            'applications:delete',
-            'user_skills:read',
-            'user_skills:create',
-            'user_skills:update',
-            'user_skills:delete',
-        ],
-        'teacher': [
-            'topics:create',
-            'topics:update',
-            'topics:delete',
-            'saved_topics:read',
-            'saved_topics:create',
-            'saved_topics:update',
-            'saved_topics:delete',
-            'applications:read',
-            'applications:create',
-            'applications:update',
-            'applications:delete',
-            'user_skills:read',
-            'user_skills:create',
-            'user_skills:update',
-            'user_skills:delete',
-        ],
-        'admin': ['*'],
-    }
+    admin_role: str = 'admin'
 
 
 class Settings(BaseSettings):
