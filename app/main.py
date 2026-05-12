@@ -1,43 +1,18 @@
-from contextlib import asynccontextmanager
-
-from fastapi import APIRouter, FastAPI
-from sqlalchemy.ext.asyncio import AsyncSession
-
-from app.core.bootstrap import AuthBootstrap
-from app.db import engine
+from fastapi import FastAPI, APIRouter
+from app.core.middlewares import request_logging_middleware
+from app.core.error_handler import exception_handler
+from app.core.responses import common_responses
 from app.routers import (
-    applications,
-    auth,
-    departments,
-    saved_topics,
-    skills,
-    students,
-    teachers,
-    topic_skills,
-    topics,
-    user_roles,
-    user_skills,
-    users,
+    applications, auth, departments, saved_topics, skills, students,
+    teachers, topic_skills, topics, user_skills, users, user_roles,
 )
-from app.services.roles import PermissionService, RoleService
-from app.services.users import UserService
 
+app = FastAPI(title='Team 8 Project', version='0.1.0')
 
-@asynccontextmanager
-async def lifespan(_: FastAPI):
-    async with AsyncSession(engine) as session:
-        bootstrap = AuthBootstrap(
-            role_service=RoleService(session),
-            permission_service=PermissionService(session),
-            user_service=UserService(session),
-        )
-        await bootstrap.bootstrap()
-    yield
+app.middleware('http')(request_logging_middleware)
+app.add_exception_handler(Exception, exception_handler)
 
-
-app = FastAPI(title='Team 8 Project', version='0.1.0', lifespan=lifespan)
-
-api_router = APIRouter(prefix='/api/v1')
+api_router = APIRouter(prefix='/api/v1', responses=common_responses)
 
 api_router.include_router(users.router)
 api_router.include_router(user_roles.router)
@@ -51,10 +26,9 @@ api_router.include_router(topic_skills.router)
 api_router.include_router(topics.router)
 api_router.include_router(user_skills.router)
 api_router.include_router(auth.router)
-app.include_router(api_router)
 
+app.include_router(api_router)
 
 @app.get('/')
 async def read_root() -> dict[str, str]:
-    """Корневой эндпоинт."""
     return {'message': 'Welcome to FastAPI Project'}

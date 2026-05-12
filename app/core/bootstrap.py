@@ -1,5 +1,6 @@
 import logging
 
+from app.core.permissions import ROLE_PERMISSIONS
 from app.core.settings import settings
 from app.models.users import UserCreate
 from app.services.roles import PermissionService, RoleService
@@ -13,7 +14,7 @@ class AuthBootstrap:
         self,
         role_service: RoleService,
         permission_service: PermissionService,
-        user_service: UserService,  # Добавляем сервис пользователя в зависимости
+        user_service: UserService,
     ):
         self._role_service = role_service
         self._permission_service = permission_service
@@ -30,7 +31,7 @@ class AuthBootstrap:
 
     async def _bootstrap_permissions(self) -> None:
         all_scopes = set()
-        for scopes in settings.auth_bootstrap.bootstrap_roles.values():
+        for scopes in ROLE_PERMISSIONS.values():
             all_scopes.update(scopes)
 
         for scope in all_scopes:
@@ -41,7 +42,7 @@ class AuthBootstrap:
         logger.info(f'Created {len(all_scopes)} permissions.')
 
     async def _bootstrap_roles(self) -> None:
-        for role_name, scopes in settings.auth_bootstrap.bootstrap_roles.items():
+        for role_name, scopes in ROLE_PERMISSIONS.items():
             is_default = role_name == settings.auth_bootstrap.default_user_role
             description = f'{role_name.title()} role'
 
@@ -56,13 +57,14 @@ class AuthBootstrap:
     async def _bootstrap_admin_user(self) -> None:
         """Создать admin пользователя и гарантировать назначение admin-роли."""
         admin_email = settings.auth_bootstrap.admin_email
-        admin_role_obj = await self._role_service.get_by_name('admin')
+        admin_role_obj = await self._role_service.get_by_name(
+            settings.auth_bootstrap.admin_role
+        )
 
         if not admin_role_obj:
             logger.warning('Admin role not found during bootstrap')
             return
 
-        # Сразу сохраняем ID в переменную, чтобы не обращаться к атрибуту объекта позже
         admin_role_id = admin_role_obj.id
 
         existing_admin = await self._user_service.get_by_email(admin_email)
@@ -73,11 +75,9 @@ class AuthBootstrap:
                 password=settings.auth_bootstrap.admin_password,
             )
             admin_user = await self._user_service.create(admin_data)
-            # Здесь тоже используем ID только что созданного пользователя
             await self._user_service.assign_role(admin_user.id, admin_role_id)
             logger.info(f'Created admin user: {admin_email}')
         else:
-            # И здесь используем заранее сохраненный admin_role_id
             await self._user_service.assign_role(existing_admin.id, admin_role_id)
             logger.info(f'Admin user already exists and role verified: {admin_email}')
 

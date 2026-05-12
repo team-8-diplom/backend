@@ -31,10 +31,5 @@ RefreshSessionServiceDep = Annotated[
 ]
 RoleServiceDep = Annotated[RoleService, Depends(RoleService)]
 PermissionServiceDep = Annotated[PermissionService, Depends(PermissionService)]
+AuthServiceDep = Annotated[AuthService, Depends(AuthService)]
 
-
-def get_auth_service() -> AuthService:
-    return AuthService()
-
-
-AuthServiceDep = Annotated[AuthService, Depends(get_auth_service)]

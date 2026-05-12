@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Response, status
 from fastapi.security import OAuth2PasswordRequestForm
 
-from app.core.security import oauth2_scheme
+from app.core.oauth import oauth2_scheme
 from app.core.settings import settings
 from app.dependencies.services import (
     AuthServiceDep,
@@ -11,8 +11,7 @@ from app.dependencies.services import (
     RoleServiceDep,
     UserServiceDep,
 )
-from app.models import AccessTokenResponse, UserCreate, UserPublic
-from app.services.auth import LoginRequest
+from app.models import AccessTokenResponse, MessageResponse, UserCreate, UserPublic
 
 router = APIRouter(prefix='/auth', tags=['Authentication'])
 
@@ -47,7 +46,7 @@ async def login(
 ):
     """Логин и установка Refresh Token в httponly cookie."""
     auth_result = await service.login(
-        LoginRequest(email=form_data.username, password=form_data.password),
+        form_data,
         user_service,
         refresh_session_service,
     )
@@ -74,7 +73,7 @@ async def get_current_user(
     return await service.get_current_user(token, user_service)
 
 
-@router.post('/logout')
+@router.post('/logout', response_model=MessageResponse)
 async def logout(
     response: Response,
     service: AuthServiceDep,
@@ -90,7 +89,7 @@ async def logout(
 
     await service.logout(refresh_token, refresh_session_service)
     response.delete_cookie(key='refresh_token', path='/')
-    return {'detail': 'Logged out successfully'}
+    return MessageResponse(detail='Logged out successfully')
 
 
 @router.post('/refresh', response_model=AccessTokenResponse)
