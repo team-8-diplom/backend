@@ -5,7 +5,7 @@ from app.models.applications import (
     ApplicationStatus,
     ApplicationUpdate,
 )
-from app.models.auth import AccessTokenResponse
+from app.models.auth import AccessTokenResponse, MessageResponse
 from app.models.departments import (
     Department,
     DepartmentCreate,
@@ -35,6 +35,7 @@ from app.models.users import User, UserCreate, UserPublic, UserUpdate
 
 __all__ = [
     'AccessTokenResponse',
+    'MessageResponse',
     # Users
     'User',
     'UserCreate',

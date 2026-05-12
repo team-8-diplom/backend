@@ -3,19 +3,19 @@ from typing import Optional
 from uuid import UUID
 
 from fastapi import HTTPException, status
+from fastapi.security import OAuth2PasswordRequestForm
 
-from app.core.security import (
+from app.core.settings import settings
+from app.core.tokens import (
     create_access_token,
     create_refresh_token,
     decode_jwt_token,
     get_user_id_from_token,
 )
-from app.core.settings import settings
 from app.models import User, UserCreate
-from app.models.auth import LoginRequest, TokenPairResponse
+from app.models.auth import TokenPairResponse
 from app.models.refresh_sessions import RefreshSessionCreate
 from app.services.refresh_sessions import RefreshSessionService
-
 
 class AuthService:
     """Сервис для управления аутентификацией."""
@@ -68,11 +68,11 @@ class AuthService:
 
     async def login(
         self,
-        login_data: LoginRequest,
+        form_data: OAuth2PasswordRequestForm,
         user_service,
         refresh_session_service: RefreshSessionService,
     ) -> TokenPairResponse:
-        user = await user_service.authenticate(login_data.email, login_data.password)
+        user = await user_service.authenticate(form_data.username, form_data.password)
         if not user:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,

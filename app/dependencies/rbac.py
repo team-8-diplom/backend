@@ -4,7 +4,8 @@ from typing import Annotated
 from fastapi import Depends, HTTPException, status
 from fastapi.security import SecurityScopes
 
-from app.core.security import get_user_id_from_token, oauth2_scheme
+from app.core.oauth import oauth2_scheme
+from app.core.tokens import get_user_id_from_token
 from app.dependencies.services import RoleServiceDep, UserServiceDep
 from app.models.users import User
 
