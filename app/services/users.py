@@ -13,8 +13,8 @@ class UserService:
         self._repository = Repository(session=session, model=User)
         self._role_link_repo = Repository(session=session, model=UserRoleLink)
 
-    async def get_all(self) -> List[User]:
-        return await self._repository.fetch()
+    async def get_all(self, limit: int = 20, offset: int = 0):
+        return await self._repository.fetch_page(limit=limit, offset=offset)
 
     async def get(self, user_id: UUID) -> Optional[User]:
         return await self._repository.get_by_id(user_id)
@@ -57,3 +57,9 @@ class UserService:
 
         await self._role_link_repo.create({'user_id': user_id, 'role_id': role_id})
         return True
+
+    async def mark_verified(self, user_id: UUID) -> Optional[User]:
+        return await self._repository.update(user_id, {'is_verified': True})
+
+    async def set_password(self, user_id: UUID, password: str) -> Optional[User]:
+        return await self._repository.update(user_id, {'password_hash': hash_password(password)})

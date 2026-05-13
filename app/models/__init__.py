@@ -6,6 +6,11 @@ from app.models.applications import (
     ApplicationUpdate,
 )
 from app.models.auth import AccessTokenResponse, MessageResponse
+from app.models.email_notifications import (
+    EmailNotification,
+    EmailNotificationCreate,
+    EmailNotificationStatus,
+)
 from app.models.departments import (
     Department,
     DepartmentCreate,
@@ -46,6 +51,10 @@ __all__ = [
     'Permission',
     'RolePermission',
     'UserRoleLink',
+    'Page',
+    'EmailNotification',
+    'EmailNotificationCreate',
+    'EmailNotificationStatus',
     # Departments
     'Department',
     'DepartmentCreate',
