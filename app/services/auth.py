@@ -23,7 +23,6 @@ from app.services.email_templates import (
 )
 from app.services.refresh_sessions import RefreshSessionService
 
-
 class AuthService:
     async def register(self, user_data: UserCreate, user_service) -> User:
         existing_user = await user_service.get_by_email(user_data.email)
