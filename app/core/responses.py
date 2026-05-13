@@ -1,8 +1,8 @@
 from app.schemas.errors import (
-    InternalServerErrorSchema,
-    UnauthorizedErrorSchema,
     ForbiddenErrorSchema,
+    InternalServerErrorSchema,
     NotFoundErrorSchema,
+    UnauthorizedErrorSchema,
 )
 
 common_responses = {
@@ -14,6 +14,4 @@ auth_responses = {
     403: {'model': ForbiddenErrorSchema, 'description': 'Forbidden'},
 }
 
-detail_responses = {
-    404: {'model': NotFoundErrorSchema, 'description': 'Not Found'}
-}
+detail_responses = {404: {'model': NotFoundErrorSchema, 'description': 'Not Found'}}

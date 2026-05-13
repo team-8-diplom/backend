@@ -34,6 +34,8 @@ class User(Base, UserBase, table=True):
     __tablename__ = 'users'
 
     password_hash: str = Field(nullable=False)
+    is_verified: bool = Field(default=False, nullable=False)
+
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None)
     )

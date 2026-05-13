@@ -2,24 +2,29 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional
 from uuid import UUID
 
-from fastapi import HTTPException, status
+from fastapi import BackgroundTasks, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 
 from app.core.settings import settings
 from app.core.tokens import (
     create_access_token,
+    create_jwt_token,
     create_refresh_token,
     decode_jwt_token,
     get_user_id_from_token,
 )
 from app.models import User, UserCreate
 from app.models.auth import TokenPairResponse
+from app.models.email_notifications import EmailNotificationCreate
 from app.models.refresh_sessions import RefreshSessionCreate
+from app.services.email_templates import (
+    account_confirmation_template,
+    reset_password_template,
+)
 from app.services.refresh_sessions import RefreshSessionService
 
-class AuthService:
-    """Сервис для управления аутентификацией."""
 
+class AuthService:
     async def register(self, user_data: UserCreate, user_service) -> User:
         existing_user = await user_service.get_by_email(user_data.email)
         if existing_user:
@@ -30,31 +35,24 @@ class AuthService:
         return await user_service.create(user_data)
 
     async def _issue_token_pair(
-        self,
-        user_id: UUID,
-        refresh_session_service: RefreshSessionService,
+        self, user_id: UUID, refresh_session_service: RefreshSessionService
     ) -> TokenPairResponse:
         access_token = create_access_token(user_id)
         refresh_token = create_refresh_token(user_id)
-
         refresh_payload = decode_jwt_token(refresh_token, token_type='refresh')
         if not refresh_payload:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail='Failed to generate refresh token',
             )
-
         expires_at = datetime.fromtimestamp(
             refresh_payload['exp'], tz=timezone.utc
         ).replace(tzinfo=None)
         await refresh_session_service.create(
             RefreshSessionCreate(
-                user_id=user_id,
-                token_jti=refresh_payload['jti'],
-                expires_at=expires_at,
+                user_id=user_id, token_jti=refresh_payload['jti'], expires_at=expires_at
             )
         )
-
         refresh_token_max_age = int(
             timedelta(
                 days=settings.auth.jwt_refresh_token_lifetime_days
@@ -78,8 +76,74 @@ class AuthService:
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail='Invalid email or password',
             )
-
         return await self._issue_token_pair(user.id, refresh_session_service)
+
+    async def request_password_reset(
+        self, email: str, user_service, email_service, background_tasks: BackgroundTasks
+    ):
+        user = await user_service.get_by_email(email)
+        if not user:
+            return
+        token = create_jwt_token(
+            user.id,
+            timedelta(minutes=settings.auth.reset_password_token_lifetime_minutes),
+            token_type='reset_password',
+        )
+        reset_link = (
+            f'{settings.notifications.frontend_base_url}/reset-password?token={token}'
+        )
+        subject, body = reset_password_template(reset_link)
+        await email_service.queue_email(
+            EmailNotificationCreate(
+                user_id=user.id,
+                recipient=user.email,
+                subject=subject,
+                template_name='reset_password',
+                body=body,
+            ),
+            background_tasks,
+        )
+
+    async def confirm_account(self, token: str, user_service):
+        user_id = get_user_id_from_token(token, token_type='confirm_account')
+        if not user_id:
+            raise HTTPException(status_code=400, detail='Invalid confirmation token')
+        user = await user_service.get(user_id)
+        if not user:
+            raise HTTPException(status_code=404, detail='User not found')
+        await user_service.mark_verified(user.id)
+
+    async def change_password(self, token: str, new_password: str, user_service):
+        user_id = get_user_id_from_token(token, token_type='reset_password')
+        if not user_id:
+            raise HTTPException(status_code=400, detail='Invalid reset token')
+        user = await user_service.get(user_id)
+        if not user:
+            raise HTTPException(status_code=404, detail='User not found')
+        await user_service.set_password(user.id, new_password)
+
+    async def send_confirmation(
+        self, user, email_service, background_tasks: BackgroundTasks
+    ):
+        token = create_jwt_token(
+            user.id,
+            timedelta(hours=settings.auth.confirmation_token_lifetime_hours),
+            token_type='confirm_account',
+        )
+        link = (
+            f'{settings.notifications.frontend_base_url}/confirm-account?token={token}'
+        )
+        subject, body = account_confirmation_template(link)
+        await email_service.queue_email(
+            EmailNotificationCreate(
+                user_id=user.id,
+                recipient=user.email,
+                subject=subject,
+                template_name='confirm_account',
+                body=body,
+            ),
+            background_tasks,
+        )
 
     async def get_current_user(self, token: str, user_service) -> User:
         user_id = get_user_id_from_token(token, token_type='access')
@@ -88,12 +152,10 @@ class AuthService:
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail='Invalid or expired access token',
             )
-
         user = await user_service.get(user_id)
         if not user:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail='User not found',
+                status_code=status.HTTP_404_NOT_FOUND, detail='User not found'
             )
         return user
 
@@ -107,14 +169,12 @@ class AuthService:
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail='Refresh token not provided',
             )
-
         payload = decode_jwt_token(refresh_token, token_type='refresh')
         if not payload:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail='Invalid or expired refresh token',
             )
-
         await refresh_session_service.invalidate(payload['jti'])
 
     async def refresh_tokens(
@@ -128,31 +188,24 @@ class AuthService:
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail='Refresh token not provided',
             )
-
         payload = decode_jwt_token(refresh_token, token_type='refresh')
         if not payload or 'jti' not in payload:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail='Invalid or expired refresh token',
             )
-
         jti = payload['jti']
         user_id = UUID(payload['sub'])
-
         is_valid = await refresh_session_service.is_valid_session(jti, user_id)
         if not is_valid:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail='Refresh session not found or invalid',
             )
-
         await refresh_session_service.invalidate(jti)
-
         user = await user_service.get(user_id)
         if not user:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail='User not found',
+                status_code=status.HTTP_404_NOT_FOUND, detail='User not found'
             )
-
         return await self._issue_token_pair(user.id, refresh_session_service)
