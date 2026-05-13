@@ -12,6 +12,11 @@ from app.models.departments import (
     DepartmentPublic,
     DepartmentUpdate,
 )
+from app.models.email_notifications import (
+    EmailNotification,
+    EmailNotificationCreate,
+    EmailNotificationStatus,
+)
 from app.models.refresh_sessions import RefreshSession, RefreshSessionCreate
 from app.models.roles import Permission, Role, RolePermission, UserRoleLink
 from app.models.saved_topics import SavedTopic, SavedTopicCreate, SavedTopicPublic
@@ -46,6 +51,10 @@ __all__ = [
     'Permission',
     'RolePermission',
     'UserRoleLink',
+    'Page',
+    'EmailNotification',
+    'EmailNotificationCreate',
+    'EmailNotificationStatus',
     # Departments
     'Department',
     'DepartmentCreate',
