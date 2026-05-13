@@ -1,12 +1,15 @@
-from typing import Optional, Dict
+from typing import Dict, Optional
+
 from pydantic import PrivateAttr
-from sqlmodel import SQLModel, Field
+from sqlmodel import Field, SQLModel
+
 from app.utils.errors import (
-    NotFoundError,
-    InternalServerError,
     ForbiddenError,
+    InternalServerError,
+    NotFoundError,
     UnauthorizedError,
 )
+
 
 class ErrorSchema(SQLModel):
     detail: Optional[Dict] = Field(default_factory=dict)
@@ -17,17 +20,21 @@ class ErrorSchema(SQLModel):
     def error_cls(self) -> type[Exception]:
         return self._error_cls
 
+
 class NotFoundErrorSchema(ErrorSchema):
     _error_cls: type[Exception] = NotFoundError
     message: str = NotFoundError.message
+
 
 class InternalServerErrorSchema(ErrorSchema):
     _error_cls: type[Exception] = InternalServerError
     message: str = InternalServerError.message
 
+
 class ForbiddenErrorSchema(ErrorSchema):
     _error_cls: type[Exception] = ForbiddenError
     message: str = ForbiddenError.message
+
 
 class UnauthorizedErrorSchema(ErrorSchema):
     _error_cls: type[Exception] = UnauthorizedError

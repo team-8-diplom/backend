@@ -6,16 +6,16 @@ from app.models.applications import (
     ApplicationUpdate,
 )
 from app.models.auth import AccessTokenResponse, MessageResponse
-from app.models.email_notifications import (
-    EmailNotification,
-    EmailNotificationCreate,
-    EmailNotificationStatus,
-)
 from app.models.departments import (
     Department,
     DepartmentCreate,
     DepartmentPublic,
     DepartmentUpdate,
+)
+from app.models.email_notifications import (
+    EmailNotification,
+    EmailNotificationCreate,
+    EmailNotificationStatus,
 )
 from app.models.refresh_sessions import RefreshSession, RefreshSessionCreate
 from app.models.roles import Permission, Role, RolePermission, UserRoleLink

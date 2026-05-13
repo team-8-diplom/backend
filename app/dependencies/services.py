@@ -33,4 +33,6 @@ RefreshSessionServiceDep = Annotated[
 RoleServiceDep = Annotated[RoleService, Depends(RoleService)]
 PermissionServiceDep = Annotated[PermissionService, Depends(PermissionService)]
 AuthServiceDep = Annotated[AuthService, Depends(AuthService)]
-EmailNotificationServiceDep = Annotated[EmailNotificationService, Depends(EmailNotificationService)]
+EmailNotificationServiceDep = Annotated[
+    EmailNotificationService, Depends(EmailNotificationService)
+]

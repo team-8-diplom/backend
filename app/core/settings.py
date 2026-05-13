@@ -67,7 +67,9 @@ class Settings(BaseSettings):
     cors: CorsSettings = CorsSettings()
     ratelimit: RateLimitSettings = RateLimitSettings()
 
-    model_config = SettingsConfigDict(env_file='.env', env_nested_delimiter='__', extra='ignore')
+    model_config = SettingsConfigDict(
+        env_file='.env', env_nested_delimiter='__', extra='ignore'
+    )
 
 
 @lru_cache

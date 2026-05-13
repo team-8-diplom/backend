@@ -31,7 +31,9 @@ class EmailNotificationService:
             )
         )
 
-    async def queue_email(self, payload: EmailNotificationCreate, background_tasks: BackgroundTasks):
+    async def queue_email(
+        self, payload: EmailNotificationCreate, background_tasks: BackgroundTasks
+    ):
         notification = await self._repository.create(payload.model_dump())
         background_tasks.add_task(self._send_and_update, notification.id)
         return notification

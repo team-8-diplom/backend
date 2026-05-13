@@ -1,4 +1,4 @@
-from typing import List
+from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Query, Security, status
@@ -16,9 +16,18 @@ router = APIRouter(prefix='/users', tags=['Users'])
     response_model=Page[UserPublic],
     dependencies=[Security(require_permission, scopes=['users:read'])],
 )
-async def get_users(service: UserServiceDep, limit: int = Query(default=20, le=100), offset: int = Query(default=0, ge=0)):
+async def get_users(
+    service: UserServiceDep,
+    limit: Annotated[int, Query(default=20, le=100)],
+    offset: Annotated[int, Query(default=0, ge=0)],
+):
     items, total = await service.get_all(limit=limit, offset=offset)
-    return Page[UserPublic](items=[UserPublic.model_validate(item) for item in items], total=total, limit=limit, offset=offset)
+    return Page[UserPublic](
+        items=[UserPublic.model_validate(item) for item in items],
+        total=total,
+        limit=limit,
+        offset=offset,
+    )
 
 
 @router.post(

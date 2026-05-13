@@ -1,15 +1,28 @@
 from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from slowapi.util import get_remote_address
-from slowapi import Limiter
 
 from app.core.error_handler import exception_handler
 from app.core.middlewares import request_logging_middleware
 from app.core.responses import common_responses
 from app.core.settings import settings
-from app.routers import applications, auth, departments, saved_topics, skills, students, teachers, topic_skills, topics, user_roles, user_skills, users
+from app.routers import (
+    applications,
+    auth,
+    departments,
+    saved_topics,
+    skills,
+    students,
+    teachers,
+    topic_skills,
+    topics,
+    user_roles,
+    user_skills,
+    users,
+)
 
 app = FastAPI(title='Team 8 Project', version='0.1.0')
 app.middleware('http')(request_logging_middleware)
@@ -24,12 +37,29 @@ app.add_middleware(
 )
 
 if settings.ratelimit.enabled:
-    app.state.limiter = Limiter(key_func=get_remote_address, default_limits=[settings.ratelimit.default_limit])
-    app.add_exception_handler(RateLimitExceeded, lambda request, exc: exception_handler(request, exc))
+    app.state.limiter = Limiter(
+        key_func=get_remote_address, default_limits=[settings.ratelimit.default_limit]
+    )
+    app.add_exception_handler(
+        RateLimitExceeded, lambda request, exc: exception_handler(request, exc)
+    )
     app.add_middleware(SlowAPIMiddleware)
 
 api_router = APIRouter(prefix='/api/v1', responses=common_responses)
-for r in [users.router, user_roles.router, applications.router, departments.router, saved_topics.router, skills.router, students.router, teachers.router, topic_skills.router, topics.router, user_skills.router, auth.router]:
+for r in [
+    users.router,
+    user_roles.router,
+    applications.router,
+    departments.router,
+    saved_topics.router,
+    skills.router,
+    students.router,
+    teachers.router,
+    topic_skills.router,
+    topics.router,
+    user_skills.router,
+    auth.router,
+]:
     api_router.include_router(r)
 app.include_router(api_router)
 

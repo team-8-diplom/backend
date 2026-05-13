@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Optional
 from uuid import UUID
 
 from app.core.passwords import hash_password, verify_password
@@ -62,4 +62,6 @@ class UserService:
         return await self._repository.update(user_id, {'is_verified': True})
 
     async def set_password(self, user_id: UUID, password: str) -> Optional[User]:
-        return await self._repository.update(user_id, {'password_hash': hash_password(password)})
+        return await self._repository.update(
+            user_id, {'password_hash': hash_password(password)}
+        )

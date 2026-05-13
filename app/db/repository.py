@@ -20,7 +20,7 @@ class Repository(Generic[T]):
         return list(result.scalars().all())
 
     async def get_by_id(self, obj_id: Union[int, UUID]) -> Optional[T]:
-        # Используем .get() — это быстрее и удобнее для поиска по PK
+        # Используем .get() - это быстрее и удобнее для поиска по PK
         return await self.session.get(self.model, obj_id)
 
     async def get_by_field(self, field: str, value: Any) -> Optional[T]:

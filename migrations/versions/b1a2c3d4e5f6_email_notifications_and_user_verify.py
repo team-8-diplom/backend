@@ -5,8 +5,8 @@ Revises: a4382fcd0415
 Create Date: 2026-05-13
 """
 
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
 
 revision = 'b1a2c3d4e5f6'
 down_revision = 'a4382fcd0415'
@@ -15,7 +15,12 @@ depends_on = None
 
 
 def upgrade() -> None:
-    op.add_column('users', sa.Column('is_verified', sa.Boolean(), nullable=False, server_default=sa.false()))
+    op.add_column(
+        'users',
+        sa.Column(
+            'is_verified', sa.Boolean(), nullable=False, server_default=sa.false()
+        ),
+    )
     op.create_table(
         'email_notifications',
         sa.Column('id', sa.Uuid(), nullable=False),
