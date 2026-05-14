@@ -6,7 +6,7 @@ from app.core.settings import settings
 
 def form_db_url() -> str:
     return URL.create(
-        drivername=settings.database.schema,
+        drivername=settings.database.driver,
         username=settings.database.user,
         password=settings.database.password,
         host=settings.database.host,
