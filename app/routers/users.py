@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException, Query, Security, status
 from app.dependencies.rbac import require_permission
 from app.dependencies.services import UserServiceDep
 from app.models.pagination import Page
-from app.models.users import UserCreate, UserPublic, UserUpdate
+from app.models.users import UserCreate, UserPublic
 
 router = APIRouter(prefix='/users', tags=['Users'])
 

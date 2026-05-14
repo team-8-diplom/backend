@@ -19,7 +19,6 @@ async def bootstrap_auth() -> None:
         await session.commit()
 
 
-
 def main() -> None:
     asyncio.run(bootstrap_auth())
 

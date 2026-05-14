@@ -10,8 +10,18 @@ from app.core.middlewares import request_logging_middleware
 from app.core.responses import common_responses
 from app.core.settings import settings
 from app.routers import (
-    applications, auth, departments, saved_topics, skills, students,
-    teachers, topic_skills, topics, user_skills, users, user_roles,
+    applications,
+    auth,
+    departments,
+    saved_topics,
+    skills,
+    students,
+    teachers,
+    topic_skills,
+    topics,
+    user_roles,
+    user_skills,
+    users,
 )
 
 app = FastAPI(title='Team 8 Project', version='0.1.0')
@@ -54,6 +64,7 @@ for r in [
 app.include_router(api_router)
 
 app.include_router(api_router)
+
 
 @app.get('/')
 async def read_root() -> dict[str, str]:

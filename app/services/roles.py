@@ -35,7 +35,7 @@ class PermissionService:
         return await self._repository.save(permission)
 
     async def get_or_create(
-            self, name: str, scope: str, description: Optional[str] = None
+        self, name: str, scope: str, description: Optional[str] = None
     ) -> Permission:
         # 1. Ищем по scope
         existing_scope = await self.get_by_scope(scope)
@@ -125,7 +125,9 @@ class RoleService:
         existing_links = await self._role_permission_repository.get_by_field(
             'role_id', role_id
         )
-        existing_permission_ids = {link.permission_id for link in (existing_links or [])}
+        existing_permission_ids = {
+            link.permission_id for link in (existing_links or [])
+        }
 
         for scope in permission_scopes:
             permission = await self._permission_repository.get_by_field('scope', scope)
