@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException, Query, Security, status
 from app.dependencies.rbac import require_permission
 from app.dependencies.services import UserServiceDep
 from app.models.pagination import Page
-from app.models.users import UserCreate, UserPublic, UserUpdate
+from app.models.users import UserCreate, UserPublic
 
 router = APIRouter(prefix='/users', tags=['Users'])
 
@@ -18,8 +18,8 @@ router = APIRouter(prefix='/users', tags=['Users'])
 )
 async def get_users(
     service: UserServiceDep,
-    limit: Annotated[int, Query(default=20, le=100)],
-    offset: Annotated[int, Query(default=0, ge=0)],
+    limit: Annotated[int, Query(le=100)] = 20,
+    offset: Annotated[int, Query(ge=0)] = 0,
 ):
     items, total = await service.get_all(limit=limit, offset=offset)
     return Page[UserPublic](

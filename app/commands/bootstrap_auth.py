@@ -16,6 +16,7 @@ async def bootstrap_auth() -> None:
             user_service=UserService(session),
         )
         await bootstrap.bootstrap()
+        await session.commit()
 
 
 def main() -> None:
