@@ -70,7 +70,7 @@ services:
       api:
         condition: service_healthy
     ports:
-      - "80:80"
+      - "8080:80"
     volumes:
       - ./deploy/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
       - ./deploy/nginx/index.html:/usr/share/nginx/html/index.html:ro
