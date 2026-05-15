@@ -1,7 +1,7 @@
 from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, Union
 from uuid import UUID
 
-from sqlalchemy import delete, select, update
+from sqlalchemy import delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.base import Base
@@ -43,12 +43,21 @@ class Repository(Generic[T]):
         return new_item
 
     async def update(
-        self, obj_id: Union[int, UUID], data: Dict[str, Any]
-    ) -> Optional[T]:  # Исправлен аргумент
+        self,
+        obj_id: Union[int, UUID],
+        data: Dict[str, Any] | Any,
+    ) -> Optional[T]:
+        if hasattr(data, 'model_dump'):
+            update_data = data.model_dump(exclude_unset=True)
+        elif isinstance(data, dict):
+            update_data = data
+        else:
+            raise TypeError('update data must be a dict or Pydantic/SQLModel model')
+
         stmt = (
             update(self.model)
             .where(self.model.id == obj_id)
-            .values(**data)
+            .values(**update_data)
             .returning(self.model)
         )
         result = await self.session.execute(stmt)
@@ -66,3 +75,10 @@ class Repository(Generic[T]):
         await self.session.commit()
         await self.session.refresh(item)
         return item
+
+    async def fetch_page(self, limit: int = 20, offset: int = 0):
+        stmt = select(self.model).limit(limit).offset(offset)
+        count_stmt = select(func.count()).select_from(self.model)
+        result = await self.session.execute(stmt)
+        total = await self.session.scalar(count_stmt)
+        return list(result.scalars().all()), int(total or 0)

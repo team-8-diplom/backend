@@ -5,6 +5,7 @@ from fastapi.params import Depends
 from app.services.applications import ApplicationService
 from app.services.auth import AuthService
 from app.services.departments import DepartmentService
+from app.services.email_notifications import EmailNotificationService
 from app.services.refresh_sessions import RefreshSessionService
 from app.services.roles import PermissionService, RoleService
 from app.services.saved_topics import SavedTopicService
@@ -33,3 +34,7 @@ RoleServiceDep = Annotated[RoleService, Depends(RoleService)]
 PermissionServiceDep = Annotated[PermissionService, Depends(PermissionService)]
 AuthServiceDep = Annotated[AuthService, Depends(AuthService)]
 
+
+EmailNotificationServiceDep = Annotated[
+    EmailNotificationService, Depends(EmailNotificationService)
+]

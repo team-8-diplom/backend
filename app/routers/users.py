@@ -1,10 +1,11 @@
-from typing import List
+from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Security, status
+from fastapi import APIRouter, HTTPException, Query, Security, status
 
 from app.dependencies.rbac import require_permission
 from app.dependencies.services import UserServiceDep
+from app.models.pagination import Page
 from app.models.users import UserCreate, UserPublic, UserUpdate
 
 router = APIRouter(prefix='/users', tags=['Users'])
@@ -12,12 +13,21 @@ router = APIRouter(prefix='/users', tags=['Users'])
 
 @router.get(
     '/',
-    response_model=List[UserPublic],
+    response_model=Page[UserPublic],
     dependencies=[Security(require_permission, scopes=['users:read'])],
 )
-async def get_users(service: UserServiceDep):
-    items = await service.get_all()
-    return [UserPublic.model_validate(item) for item in items]
+async def get_users(
+    service: UserServiceDep,
+    limit: Annotated[int, Query(le=100)] = 20,
+    offset: Annotated[int, Query(ge=0)] = 0,
+):
+    items, total = await service.get_all(limit=limit, offset=offset)
+    return Page[UserPublic](
+        items=[UserPublic.model_validate(item) for item in items],
+        total=total,
+        limit=limit,
+        offset=offset,
+    )
 
 
 @router.post(

@@ -1,8 +1,8 @@
 from app.schemas.errors import (
-    InternalServerErrorSchema,
-    UnauthorizedErrorSchema,
     ForbiddenErrorSchema,
+    InternalServerErrorSchema,
     NotFoundErrorSchema,
+    UnauthorizedErrorSchema,
 )
 
 common_responses = {

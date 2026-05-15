@@ -1,0 +1,79 @@
+name: topic-picker
+
+x-back-common: &back-common
+  build:
+    context: .
+  image: ${DOCKERHUB_BACKEND_IMAGE:-topic-picker-backend:local}
+  restart: unless-stopped
+  env_file:
+    - .env
+  environment:
+    DATABASE__DRIVER: ${DATABASE__DRIVER:-postgresql+asyncpg}
+    DATABASE__HOST: ${DATABASE__HOST:-db}
+    DATABASE__PORT: ${DATABASE__PORT:-5433}
+    DATABASE__USER: ${DATABASE__USER}
+    DATABASE__PASSWORD: ${DATABASE__PASSWORD}
+    DATABASE__NAME: ${DATABASE__NAME}
+
+services:
+  db:
+    image: postgres:17
+    restart: unless-stopped
+    command: ["postgres", "-p", "5433"]
+    env_file:
+      - .env
+    environment:
+      POSTGRES_DB: ${DATABASE__NAME:-topic_picker}
+      POSTGRES_USER: ${DATABASE__USER:-postgres}
+      POSTGRES_PASSWORD: ${DATABASE__PASSWORD:-postgres}
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE__USER:-postgres} -d ${DATABASE__NAME:-topic_picker} -p 5433"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  migrate:
+    <<: *back-common
+    restart: "no"
+    command: ["alembic", "upgrade", "head"]
+    depends_on:
+      db:
+        condition: service_healthy
+
+  bootstrap-rbac:
+    <<: *back-common
+    restart: "no"
+    command: ["python", "-m", "app.commands.bootstrap_auth"]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  api:
+    <<: *back-common
+    command: ["gunicorn", "app.main:app", "-c", "gunicorn.conf.py"]
+    depends_on:
+      bootstrap-rbac:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8000/ || exit 1"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+
+  nginx:
+    image: nginx:1.29-alpine
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "${WEB_PORT:-8080}:80"
+    volumes:
+      - ./deploy/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./deploy/nginx/index.html:/usr/share/nginx/html/index.html:ro
+
+volumes:
+  pg_data:
+    name: topic_picker_pg_data_v17

@@ -14,3 +14,21 @@ class TokenPairResponse(BaseModel):
 
 class MessageResponse(BaseModel):
     detail: str
+
+
+class PasswordResetRequest(BaseModel):
+    email: str
+
+
+class PasswordChangeRequest(BaseModel):
+    token: str
+    new_password: str
+
+
+class ConfirmAccountRequest(BaseModel):
+    token: str
+
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str

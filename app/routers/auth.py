@@ -1,17 +1,32 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Cookie, Depends, HTTPException, Response, status
-from fastapi.security import OAuth2PasswordRequestForm
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Cookie,
+    Depends,
+    Request,
+    HTTPException,
+    Response,
+    status,
+)
 
 from app.core.oauth import oauth2_scheme
 from app.core.settings import settings
 from app.dependencies.services import (
     AuthServiceDep,
+    EmailNotificationServiceDep,
     RefreshSessionServiceDep,
     RoleServiceDep,
     UserServiceDep,
 )
 from app.models import AccessTokenResponse, MessageResponse, UserCreate, UserPublic
+from app.models.auth import (
+    ConfirmAccountRequest,
+    LoginRequest,
+    PasswordChangeRequest,
+    PasswordResetRequest,
+)
 
 router = APIRouter(prefix='/auth', tags=['Authentication'])
 
@@ -19,38 +34,52 @@ router = APIRouter(prefix='/auth', tags=['Authentication'])
 @router.post(
     '/register', response_model=UserPublic, status_code=status.HTTP_201_CREATED
 )
-async def register(
+async def register(  # noqa: PLR0913
     user_data: UserCreate,
+    background_tasks: BackgroundTasks,
     service: AuthServiceDep,
     user_service: UserServiceDep,
     role_service: RoleServiceDep,
+    email_service: EmailNotificationServiceDep,
 ):
-    """Регистрация нового пользователя."""
     created_user = await service.register(user_data, user_service)
-
+    await service.send_confirmation(created_user, email_service, background_tasks)
     public_role = await role_service.get_by_name(
         settings.auth_bootstrap.default_user_role
     )
     if public_role:
         await role_service.assign_role_to_user(created_user.id, public_role.id)
-    return created_user
+    return UserPublic.model_validate(created_user)
 
 
 @router.post('/login', response_model=AccessTokenResponse)
 async def login(
-    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+    request: Request,
     service: AuthServiceDep,
     user_service: UserServiceDep,
     refresh_session_service: RefreshSessionServiceDep,
     response: Response,
 ):
-    """Логин и установка Refresh Token в httponly cookie."""
-    auth_result = await service.login(
-        form_data,
-        user_service,
-        refresh_session_service,
-    )
+    email = ''
+    password = ''
+    content_type = request.headers.get('content-type', '')
 
+    if 'application/json' in content_type:
+        payload = LoginRequest.model_validate(await request.json())
+        email = payload.email
+        password = payload.password
+    else:
+        form_data = await request.form()
+        email = str(form_data.get('username') or form_data.get('email') or '')
+        password = str(form_data.get('password') or '')
+
+    if not email or not password:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail='Email/username and password are required',
+        )
+
+    auth_result = await service.login(email, password, user_service, refresh_session_service)
     response.set_cookie(
         key='refresh_token',
         value=auth_result.refresh_token,
@@ -63,14 +92,51 @@ async def login(
     return AccessTokenResponse(access_token=auth_result.access_token)
 
 
+@router.post('/password-reset', response_model=MessageResponse)
+async def password_reset(
+    payload: PasswordResetRequest,
+    background_tasks: BackgroundTasks,
+    service: AuthServiceDep,
+    user_service: UserServiceDep,
+    email_service: EmailNotificationServiceDep,
+):
+    await service.request_password_reset(
+        payload.email,
+        user_service,
+        email_service,
+        background_tasks,
+    )
+    return MessageResponse(detail='If the user exists, reset email was queued')
+
+
+@router.post('/password-change', response_model=MessageResponse)
+async def password_change(
+    payload: PasswordChangeRequest,
+    service: AuthServiceDep,
+    user_service: UserServiceDep,
+):
+    await service.change_password(payload.token, payload.new_password, user_service)
+    return MessageResponse(detail='Password changed successfully')
+
+
+@router.post('/confirm-account', response_model=MessageResponse)
+async def confirm_account(
+    payload: ConfirmAccountRequest,
+    service: AuthServiceDep,
+    user_service: UserServiceDep,
+):
+    await service.confirm_account(payload.token, user_service)
+    return MessageResponse(detail='Account confirmed')
+
+
 @router.get('/me', response_model=UserPublic)
 async def get_current_user(
     token: Annotated[str, Depends(oauth2_scheme)],
     service: AuthServiceDep,
     user_service: UserServiceDep,
 ):
-    """Получение данных текущего пользователя."""
-    return await service.get_current_user(token, user_service)
+    current_user = await service.get_current_user(token, user_service)
+    return UserPublic.model_validate(current_user)
 
 
 @router.post('/logout', response_model=MessageResponse)
@@ -80,13 +146,11 @@ async def logout(
     refresh_session_service: RefreshSessionServiceDep,
     refresh_token: Annotated[str | None, Cookie()] = None,
 ):
-    """Выход с инвалидацией сессии."""
     if not refresh_token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail='No refresh token',
         )
-
     await service.logout(refresh_token, refresh_session_service)
     response.delete_cookie(key='refresh_token', path='/')
     return MessageResponse(detail='Logged out successfully')
@@ -100,19 +164,16 @@ async def refresh_tokens(
     refresh_session_service: RefreshSessionServiceDep,
     refresh_token: Annotated[str | None, Cookie()] = None,
 ):
-    """Обновление пары токенов (Refresh Rotation)."""
     if not refresh_token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail='Refresh token missing',
         )
-
     auth_result = await service.refresh_tokens(
         refresh_token,
         user_service,
         refresh_session_service,
     )
-
     response.set_cookie(
         key='refresh_token',
         value=auth_result.refresh_token,
@@ -122,5 +183,4 @@ async def refresh_tokens(
         max_age=auth_result.refresh_token_max_age,
         path='/',
     )
-
     return AccessTokenResponse(access_token=auth_result.access_token)
