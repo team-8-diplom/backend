@@ -14,14 +14,15 @@ async def exception_handler(_: Request, exc: Exception):
     }
     for code, config in expected_responses.items():
         model = config.get('model')
-        if model and hasattr(model, 'error_cls'):
-            error_cls = model.error_cls
-            if isinstance(exc, error_cls):
+        if model and hasattr(model, 'ERROR_CLS'):
+            error_cls = model.ERROR_CLS
+            if error_cls and isinstance(exc, error_cls):
                 status_code = code
                 break
 
+    error_message = exc.message if hasattr(exc, 'message') else str(exc)
     logger.error(
-        f'Handled exception: {exc.__class__.__name__} - {exc.message if hasattr(exc, "message") else str(exc)}'
+        f'Handled exception: {exc.__class__.__name__} - {error_message}'
     )
 
     return JSONResponse(

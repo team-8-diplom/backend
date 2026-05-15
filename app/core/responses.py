@@ -14,4 +14,6 @@ auth_responses = {
     403: {'model': ForbiddenErrorSchema, 'description': 'Forbidden'},
 }
 
-detail_responses = {404: {'model': NotFoundErrorSchema, 'description': 'Not Found'}}
+detail_responses = {
+    404: {'model': NotFoundErrorSchema, 'description': 'Not Found'}
+}

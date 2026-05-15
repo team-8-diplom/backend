@@ -10,8 +10,18 @@ from app.core.middlewares import request_logging_middleware
 from app.core.responses import common_responses
 from app.core.settings import settings
 from app.routers import (
-    applications, auth, departments, saved_topics, skills, students,
-    teachers, topic_skills, topics, user_skills, users, user_roles,
+    applications,
+    auth,
+    departments,
+    saved_topics,
+    skills,
+    students,
+    teachers,
+    topic_skills,
+    topics,
+    user_roles,
+    user_skills,
+    users,
 )
 
 app = FastAPI(title='Team 8 Project', version='0.1.0')
@@ -26,17 +36,21 @@ app.add_middleware(
     allow_headers=settings.cors.allow_headers,
 )
 
+
+async def _ratelimit_exception_handler(request, exc):
+    return await exception_handler(request, exc)
+
+
 if settings.ratelimit.enabled:
     app.state.limiter = Limiter(
-        key_func=get_remote_address, default_limits=[settings.ratelimit.default_limit]
+        key_func=get_remote_address,
+        default_limits=[settings.ratelimit.default_limit],
     )
-    app.add_exception_handler(
-        RateLimitExceeded, lambda request, exc: exception_handler(request, exc)
-    )
+    app.add_exception_handler(RateLimitExceeded, _ratelimit_exception_handler)
     app.add_middleware(SlowAPIMiddleware)
 
 api_router = APIRouter(prefix='/api/v1', responses=common_responses)
-for r in [
+for router in [
     users.router,
     user_roles.router,
     applications.router,
@@ -50,10 +64,10 @@ for r in [
     user_skills.router,
     auth.router,
 ]:
-    api_router.include_router(r)
-app.include_router(api_router)
+    api_router.include_router(router)
 
 app.include_router(api_router)
+
 
 @app.get('/')
 async def read_root() -> dict[str, str]:

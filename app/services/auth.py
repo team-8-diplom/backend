@@ -3,7 +3,6 @@ from typing import Optional
 from uuid import UUID
 
 from fastapi import BackgroundTasks, HTTPException, status
-from fastapi.security import OAuth2PasswordRequestForm
 
 from app.core.settings import settings
 from app.core.tokens import (
@@ -22,6 +21,7 @@ from app.services.email_templates import (
     reset_password_template,
 )
 from app.services.refresh_sessions import RefreshSessionService
+
 
 class AuthService:
     async def register(self, user_data: UserCreate, user_service) -> User:
@@ -65,11 +65,23 @@ class AuthService:
 
     async def login(
         self,
-        form_data: OAuth2PasswordRequestForm,
-        user_service,
-        refresh_session_service: RefreshSessionService,
+        email_or_form,
+        password_or_user_service,
+        user_service_or_refresh,
+        refresh_session_service: RefreshSessionService | None = None,
     ) -> TokenPairResponse:
-        user = await user_service.authenticate(form_data.username, form_data.password)
+        if refresh_session_service is None:
+            form_data = email_or_form
+            user_service = password_or_user_service
+            refresh_session_service = user_service_or_refresh
+            email = str(getattr(form_data, 'username', ''))
+            password = str(getattr(form_data, 'password', ''))
+        else:
+            email = str(email_or_form)
+            password = str(password_or_user_service)
+            user_service = user_service_or_refresh
+
+        user = await user_service.authenticate(email, password)
         if not user:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,

@@ -1,10 +1,11 @@
-from typing import List
+from typing import List, Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Security, status
 
 from app.dependencies.rbac import require_permission
 from app.dependencies.services import TeacherServiceDep
+from app.models import User
 from app.models.teachers import TeacherCreate, TeacherPublic, TeacherUpdate
 
 router = APIRouter(prefix='/teachers', tags=['Teachers'])
@@ -26,8 +27,12 @@ async def get_teachers(service: TeacherServiceDep):
     status_code=status.HTTP_201_CREATED,
     dependencies=[Security(require_permission, scopes=['teachers:create'])],
 )
-async def create_teacher(teacher: TeacherCreate, service: TeacherServiceDep):
-    created = await service.create(teacher)
+async def create_teacher(
+        teacher: TeacherCreate,
+        service: TeacherServiceDep,
+        current_user: Annotated[User, Security(require_permission)],
+):
+    created = await service.create(teacher, user_id=current_user.id)
     return TeacherPublic.model_validate(created)
 
 

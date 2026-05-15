@@ -1,131 +1,106 @@
-# Платформа выбора тем дипломных работ
+# Topic Picker Backend
 
-## Описание проекта
+## Run with Docker Compose (for frontend developers)
 
-Цель проекта — разработать цифровую платформу для централизованного выбора тем дипломных работ.
-Система автоматизирует процесс публикации тем преподавателями и помогает студентам находить наиболее подходящие темы на основе их навыков.
+### 1. Prerequisites
+- Docker Desktop (or Docker Engine + Compose plugin)
+- Access to DockerHub images for this project
 
-Платформа решает несколько проблем существующих решений:
+### 2. Configure environment
+Create `.env` file in project root:
 
-* отсутствие централизованного каталога тем
-* ручная обработка заявок
-* отсутствие сопоставления тем и навыков студентов
-* сложность управления заявками преподавателями
+```env
+DATABASE__DRIVER=postgresql+asyncpg
+DATABASE__HOST=db
+DATABASE__PORT=5433
+DATABASE__USER=postgres
+DATABASE__PASSWORD=postgres
+DATABASE__NAME=topic_picker
 
-Проект представляет собой **REST API на FastAPI**, который обеспечивает:
+DOCKERHUB_BACKEND_IMAGE=<your-dockerhub-namespace>/topic-picker-backend:<tag>
+# optional for local build/run
+# DOCKERHUB_BACKEND_IMAGE=topic-picker-backend:local
+```
 
-* публикацию и управление темами дипломных работ
-* управление профилями студентов и их навыками
-* подачу и обработку заявок
-* автоматическое сопоставление тем и навыков студентов
-* систему уведомлений
+> `DOCKERHUB_BACKEND_IMAGE` must point to a published backend image in DockerHub.
 
-# Установка и запуск
+### 3. Start project
+```bash
+docker compose up
+```
 
-### 1. Установить uv
 
-Если `uv` ещё не установлен:
+### 3.1 If Compose still uses old DB host/port
+If you previously ran with `127.0.0.1:5433`, recreate containers to apply fresh env/config:
 
 ```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh
+docker compose down
+docker compose up --force-recreate
 ```
 
-или через pip:
+Optional full reset (will remove DB data):
+```bash
+docker compose down -v
+docker compose up --force-recreate
+```
+
+Admin login
+```env
+admin_email = 'admin@admin.com'
+admin_password = 'admin123'
+```
+
+
+### 4. Endpoints
+- App entry point: `http://localhost:${WEB_PORT:-8080}/`
+- API via reverse proxy: `http://localhost:${WEB_PORT:-8080}/api/v1/...`
+- Swagger UI: `http://localhost:${WEB_PORT:-8080}/docs`
+- OpenAPI JSON: `http://localhost:${WEB_PORT:-8080}/openapi.json`
+- ReDoc: `http://localhost:${WEB_PORT:-8080}/redoc`
+
+### 5. Architecture notes
+- Nginx exposes port `80`; PostgreSQL can be exposed as `${DATABASE_EXPOSE_PORT}` (default `5433`) for local tools.
+- `/api/*` is proxied by Nginx to backend service.
+- Non-API paths return static `index.html`.
+- PostgreSQL uses persistent named volume `pg_data`.
+- If old DB volume was initialized with another internal port, run `docker compose down -v` once to reinitialize PostgreSQL on container port `5433`.
+- Startup order: `db` -> `migrate` -> `bootstrap-rbac` -> `api` -> `nginx` (RBAC runs via `app.commands.bootstrap_auth`).
+
+- `migrate` and `bootstrap-rbac` are one-shot jobs and should finish with status `exited (0)`.
+
+## Build and publish backend image (maintainers)
 
 ```bash
-pip install uv
+docker build -t <your-dockerhub-namespace>/topic-picker-backend:<tag> .
+docker push <your-dockerhub-namespace>/topic-picker-backend:<tag>
 ```
 
-Проверить установку:
+The Dockerfile uses:
+- `python:3.13.3-slim-bookworm`
+- multi-stage build
+- `uv` for dependency sync
+- non-root runtime user
+- curl-based container healthcheck
 
+
+### If you see old code inside containers
+Run with local rebuild to avoid stale DockerHub image:
 ```bash
-uv --version
+docker compose build --no-cache
+docker compose up --force-recreate
 ```
 
 
-
-### 2. Клонировать репозиторий
-
+### If migrate says `No module named alembic`
+Do not mount project root over `/app` in runtime containers (it hides image `.venv`).
+Use the current compose file and rebuild:
 ```bash
-git clone https://github.com/your-repository/topic-platform.git
-cd topic-platform
+docker compose build --no-cache
+docker compose up --force-recreate
 ```
 
 
-
-### 3. Установить зависимости
-
-Если используется `pyproject.toml`:
-
-```bash
-uv sync
-```
-
-### 4. Запуск приложения
-
-```bash
-uv run uvicorn app.main:app --reload
-```
-
-
-
-### 5. Документация API
-
-После запуска приложение будет доступно:
-
-API:
-
-```
-http://127.0.0.1:8000
-```
-
-Swagger:
-
-```
-http://127.0.0.1:8000/docs
-```
-
-ReDoc:
-
-```
-http://127.0.0.1:8000/redoc
-```
-
-# Переменные среды
-Перед запуском необходимо указать переменные среды\
-Шаблон файла переменных среды - ```.env.example```\
-Переменные среды должны быть указаны в ```.env```
-
-| Название | Описание | Тип | Значение по умолчанию |
-| --- | --- | --- | --- |
-| DATABASE__SCHEMA | Протокол подключения к БД | Строка, драйвер | postgresql+asyncpg |
-| DATABASE__HOST | Хост БД | Строка | 127.0.0.1 |
-| DATABASE__PORT | Порт БД | Число | 5432 |
-| DATABASE__USER | Имя пользователя в БД | Строка | postgres |
-| DATABASE__PASSWORD | Пароль БД | Строка | pass |
-| DATABASE__NAME | Название БД | Строка | db |
-| AUTH__JWT_SECRET_KEY | Секретный ключ для подписи JWT токенов (мин. 32 символа) | Строка | secret-key-change-in-production |
-| AUTH__JWT_ALGORITHM | Алгоритм шифрования JWT | Строка | HS256 |
-| AUTH__JWT_ACCESS_TOKEN_LIFETIME_MINUTES | Время жизни access-токена в минутах | Число | 15 |
-| AUTH__JWT_REFRESH_TOKEN_LIFETIME_DAYS | Время жизни refresh-токена в днях | Число | 7 |
-| AUTH_BOOTSTRAP__ADMIN_EMAIL | Email bootstrap-администратора | Строка | admin@admin.com |
-| AUTH_BOOTSTRAP__ADMIN_PASSWORD | Пароль bootstrap-администратора | Строка | admin123 |
-| AUTH_BOOTSTRAP__DEFAULT_USER_ROLE | Роль, назначаемая новым пользователям по умолчанию | Строка | public |
-| AUTH_BOOTSTRAP__ADMIN_ROLE | Роль с административными правами | Строка | admin |
-
-### Bootstrap RBAC
-Карта ролей и разрешений хранится в `app/core/permissions.py`, а через переменные среды настраиваются только названия ролей и учетные данные bootstrap-администратора.
-
-```bash
-uv run python -m app.commands.bootstrap_auth
-```
-### Запуск миграций
-```bash
-uv run alembic upgrade head
-```
-
-### Генерация миграций
-```bash
-uv run alembic revision --autogenerate -m "<коментарий>"
-```
-
+### If you see an IIS 404 page on Windows
+IIS is serving port 80 on your host. Use compose port override (default now `8080`):
+- Open API: `http://localhost:8080/api/v1/...`
+- Or set another host port in `.env` via `WEB_PORT=8090`

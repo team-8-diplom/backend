@@ -34,7 +34,8 @@ class EmailNotificationService:
     async def queue_email(
         self, payload: EmailNotificationCreate, background_tasks: BackgroundTasks
     ):
-        notification = await self._repository.create(payload.model_dump())
+        notification = self._repository.model(**payload.model_dump())
+        notification = await self._repository.save(notification)
         background_tasks.add_task(self._send_and_update, notification.id)
         return notification
 
@@ -53,7 +54,7 @@ class EmailNotificationService:
             await self._repository.update(
                 notification.id,
                 {
-                    'status': EmailNotificationStatus.sent,
+                    'status': EmailNotificationStatus.sent.value,
                     'sent_at': datetime.now(timezone.utc).replace(tzinfo=None),
                     'error_message': None,
                 },
@@ -62,7 +63,7 @@ class EmailNotificationService:
             await self._repository.update(
                 notification.id,
                 {
-                    'status': EmailNotificationStatus.failed,
+                    'status': EmailNotificationStatus.failed.value,
                     'error_message': str(exc),
                 },
             )
