@@ -1,6 +1,8 @@
 from typing import List, Optional, Set
 from uuid import UUID
 
+from sqlalchemy.exc import IntegrityError
+
 from app.core import settings
 from app.core.permissions import ROLE_PERMISSIONS
 from app.db.repository import Repository
@@ -12,6 +14,15 @@ from app.models.users import User
 class PermissionService:
     def __init__(self, session: SessionDep):
         self._repository = Repository(session=session, model=Permission)
+
+
+    async def _repo_create(self, repository: Repository, data: dict):
+        create_method = getattr(repository, 'create', None)
+        if callable(create_method):
+            return await create_method(data)
+
+        item = repository.model(**data)
+        return await repository.save(item)
 
     async def get_all(self) -> List[Permission]:
         return await self._repository.fetch()
@@ -31,33 +42,31 @@ class PermissionService:
         scope: str,
         description: Optional[str] = None,
     ) -> Permission:
-        permission = Permission(name=name, scope=scope, description=description)
-        return await self._repository.save(permission)
+        try:
+            return await self._repo_create(
+                self._repository,
+                {'name': name, 'scope': scope, 'description': description},
+            )
+        except IntegrityError:
+            existing = await self.get_by_scope(scope)
+            if existing:
+                return existing
+            existing_by_name = await self.get_by_name(name)
+            if existing_by_name:
+                return existing_by_name
+            raise
 
     async def get_or_create(
         self, name: str, scope: str, description: Optional[str] = None
     ) -> Permission:
-        # 1. Ищем по scope
-        existing_scope = await self.get_by_scope(scope)
-        if existing_scope:
-            # Если репозиторий вернул список, берем первый элемент
-            if isinstance(existing_scope, list):
-                if len(existing_scope) > 0:
-                    return existing_scope[0]
-            else:
-                return existing_scope
+        existing = await self.get_by_scope(scope)
+        if existing:
+            return existing
 
-        # 2. Ищем по name
-        existing_name = await self.get_by_name(name)
-        if existing_name:
-            # Если репозиторий вернул список, берем первый элемент
-            if isinstance(existing_name, list):
-                if len(existing_name) > 0:
-                    return existing_name[0]
-            else:
-                return existing_name
+        existing_by_name = await self.get_by_name(name)
+        if existing_by_name:
+            return existing_by_name
 
-        # 3. Если ничего не нашли — создаем
         return await self.create(name=name, scope=scope, description=description)
 
 
@@ -70,6 +79,15 @@ class RoleService:
         )
         self._user_role_repository = Repository(session=session, model=UserRoleLink)
         self._user_repository = Repository(session=session, model=User)
+
+
+    async def _repo_create(self, repository: Repository, data: dict):
+        create_method = getattr(repository, 'create', None)
+        if callable(create_method):
+            return await create_method(data)
+
+        item = repository.model(**data)
+        return await repository.save(item)
 
     async def get_all(self) -> List[Role]:
         return await self._repository.fetch()
@@ -87,8 +105,17 @@ class RoleService:
         is_default: bool = False,
         permission_scopes: Optional[List[str]] = None,
     ) -> Role:
-        role = Role(name=name, description=description, is_default=is_default)
-        saved_role = await self._repository.save(role)
+        try:
+            saved_role = await self._repo_create(
+                self._repository,
+                {'name': name, 'description': description, 'is_default': is_default},
+            )
+        except IntegrityError:
+            existing = await self.get_by_name(name)
+            if existing:
+                saved_role = existing
+            else:
+                raise
 
         if permission_scopes:
             await self.add_permissions_to_role(saved_role.id, permission_scopes)
@@ -122,26 +149,28 @@ class RoleService:
         if not role:
             raise ValueError(f'Role with id {role_id} not found')
 
-        existing_links = await self._role_permission_repository.get_by_field(
+        existing_links = await self._role_permission_repository.fetch_by_field(
             'role_id', role_id
         )
-        existing_permission_ids = {
-            link.permission_id for link in (existing_links or [])
-        }
+        existing_permission_ids = {link.permission_id for link in existing_links}
 
         for scope in permission_scopes:
             permission = await self._permission_repository.get_by_field('scope', scope)
             if not permission or permission.id in existing_permission_ids:
                 continue
 
-            link = RolePermission(role_id=role_id, permission_id=permission.id)
-            await self._role_permission_repository.save(link)
+            await self._repo_create(
+                self._role_permission_repository,
+                {'role_id': role_id, 'permission_id': permission.id},
+            )
 
         return await self._repository.get_by_id(role_id)
 
     async def assign_role_to_user(self, user_id: UUID, role_id: UUID) -> UserRoleLink:
-        link = UserRoleLink(user_id=user_id, role_id=role_id)
-        return await self._user_role_repository.save(link)
+        return await self._repo_create(
+            self._user_role_repository,
+            {'user_id': user_id, 'role_id': role_id},
+        )
 
     async def get_user_roles(self, user_id: UUID) -> List[Role]:
         user = await self._user_repository.get_by_id(user_id)
@@ -154,7 +183,7 @@ class RoleService:
         if user is None:
             return set()
 
-        user_role_links = await self._user_role_repository.get_by_field(
+        user_role_links = await self._user_role_repository.fetch_by_field(
             'user_id', user_id
         )
         role_ids = [link.role_id for link in user_role_links]
@@ -176,7 +205,7 @@ class RoleService:
 
         role_permission_links: List[RolePermission] = []
         for role_id in role_ids:
-            links = await self._role_permission_repository.get_by_field(
+            links = await self._role_permission_repository.fetch_by_field(
                 'role_id', role_id
             )
             role_permission_links.extend(links)

@@ -9,7 +9,7 @@ class DatabaseSettings(BaseModel):
     host: str = 'db'
     user: str = 'postgres'
     password: str = 'pass'
-    port: int = 5433
+    port: int = 5432
     name: str = 'topic_picker'
 
 
@@ -68,7 +68,9 @@ class Settings(BaseSettings):
     ratelimit: RateLimitSettings = RateLimitSettings()
 
     model_config = SettingsConfigDict(
-        env_file='.env', env_nested_delimiter='__', extra='ignore'
+        env_file='.env',
+        env_nested_delimiter='__',
+        extra='ignore',
     )
 
 

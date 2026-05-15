@@ -9,10 +9,6 @@ from fastapi import (
     Response,
     status,
 )
-from fastapi.security import OAuth2PasswordRequestForm
-from slowapi import Limiter
-from slowapi.util import get_remote_address
-from starlette.requests import Request
 
 from app.core.oauth import oauth2_scheme
 from app.core.settings import settings
@@ -26,18 +22,19 @@ from app.dependencies.services import (
 from app.models import AccessTokenResponse, MessageResponse, UserCreate, UserPublic
 from app.models.auth import (
     ConfirmAccountRequest,
+    LoginRequest,
     PasswordChangeRequest,
     PasswordResetRequest,
 )
+from fastapi.security import OAuth2PasswordRequestForm
 
 router = APIRouter(prefix='/auth', tags=['Authentication'])
-limiter = Limiter(key_func=get_remote_address)
 
 
 @router.post(
     '/register', response_model=UserPublic, status_code=status.HTTP_201_CREATED
 )
-async def register(
+async def register(  # noqa: PLR0913
     user_data: UserCreate,
     background_tasks: BackgroundTasks,
     service: AuthServiceDep,
@@ -52,19 +49,48 @@ async def register(
     )
     if public_role:
         await role_service.assign_role_to_user(created_user.id, public_role.id)
-    return created_user
+    return UserPublic.model_validate(created_user)
 
 
 @router.post('/login', response_model=AccessTokenResponse)
 async def login(
-    request: Request,
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     service: AuthServiceDep,
     user_service: UserServiceDep,
     refresh_session_service: RefreshSessionServiceDep,
     response: Response,
 ):
-    auth_result = await service.login(form_data, user_service, refresh_session_service)
+    auth_result = await service.login(
+        form_data,
+        user_service,
+        refresh_session_service,
+    )
+    response.set_cookie(
+        key='refresh_token',
+        value=auth_result.refresh_token,
+        httponly=True,
+        secure=False,
+        samesite='lax',
+        max_age=auth_result.refresh_token_max_age,
+        path='/',
+    )
+    return AccessTokenResponse(access_token=auth_result.access_token)
+
+
+@router.post('/login-json', response_model=AccessTokenResponse)
+async def login_json(
+    payload: LoginRequest,
+    service: AuthServiceDep,
+    user_service: UserServiceDep,
+    refresh_session_service: RefreshSessionServiceDep,
+    response: Response,
+):
+    auth_result = await service.login(
+        payload.email,
+        payload.password,
+        user_service,
+        refresh_session_service,
+    )
     response.set_cookie(
         key='refresh_token',
         value=auth_result.refresh_token,
@@ -86,7 +112,10 @@ async def password_reset(
     email_service: EmailNotificationServiceDep,
 ):
     await service.request_password_reset(
-        payload.email, user_service, email_service, background_tasks
+        payload.email,
+        user_service,
+        email_service,
+        background_tasks,
     )
     return MessageResponse(detail='If the user exists, reset email was queued')
 
@@ -117,7 +146,8 @@ async def get_current_user(
     service: AuthServiceDep,
     user_service: UserServiceDep,
 ):
-    return await service.get_current_user(token, user_service)
+    current_user = await service.get_current_user(token, user_service)
+    return UserPublic.model_validate(current_user)
 
 
 @router.post('/logout', response_model=MessageResponse)
@@ -129,7 +159,8 @@ async def logout(
 ):
     if not refresh_token:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail='No refresh token'
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail='No refresh token',
         )
     await service.logout(refresh_token, refresh_session_service)
     response.delete_cookie(key='refresh_token', path='/')
@@ -146,10 +177,13 @@ async def refresh_tokens(
 ):
     if not refresh_token:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail='Refresh token missing'
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail='Refresh token missing',
         )
     auth_result = await service.refresh_tokens(
-        refresh_token, user_service, refresh_session_service
+        refresh_token,
+        user_service,
+        refresh_session_service,
     )
     response.set_cookie(
         key='refresh_token',
