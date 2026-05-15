@@ -20,7 +20,6 @@ class Repository(Generic[T]):
         return list(result.scalars().all())
 
     async def get_by_id(self, obj_id: Union[int, UUID]) -> Optional[T]:
-        # Используем .get() — это быстрее и удобнее для поиска по PK
         return await self.session.get(self.model, obj_id)
 
     async def get_by_field(self, field: str, value: Any) -> Optional[T]:
@@ -64,11 +63,11 @@ class Repository(Generic[T]):
         await self.session.commit()
         return result.scalar_one_or_none()
 
-    async def delete(self, obj_id: Union[int, UUID]) -> bool:
+    async def delete(self, obj_id: Union[int, UUID]) -> Optional[T]:
         stmt = delete(self.model).where(self.model.id == obj_id)
         result = await self.session.execute(stmt)
         await self.session.commit()
-        return result.rowcount > 0
+        return result.scalar_one_or_none()
 
     async def save(self, item: T) -> T:
         self.session.add(item)

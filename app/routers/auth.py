@@ -5,7 +5,6 @@ from fastapi import (
     BackgroundTasks,
     Cookie,
     Depends,
-    Request,
     HTTPException,
     Response,
     status,
@@ -27,6 +26,7 @@ from app.models.auth import (
     PasswordChangeRequest,
     PasswordResetRequest,
 )
+from fastapi.security import OAuth2PasswordRequestForm
 
 router = APIRouter(prefix='/auth', tags=['Authentication'])
 
@@ -54,32 +54,43 @@ async def register(  # noqa: PLR0913
 
 @router.post('/login', response_model=AccessTokenResponse)
 async def login(
-    request: Request,
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     service: AuthServiceDep,
     user_service: UserServiceDep,
     refresh_session_service: RefreshSessionServiceDep,
     response: Response,
 ):
-    email = ''
-    password = ''
-    content_type = request.headers.get('content-type', '')
+    auth_result = await service.login(
+        form_data,
+        user_service,
+        refresh_session_service,
+    )
+    response.set_cookie(
+        key='refresh_token',
+        value=auth_result.refresh_token,
+        httponly=True,
+        secure=False,
+        samesite='lax',
+        max_age=auth_result.refresh_token_max_age,
+        path='/',
+    )
+    return AccessTokenResponse(access_token=auth_result.access_token)
 
-    if 'application/json' in content_type:
-        payload = LoginRequest.model_validate(await request.json())
-        email = payload.email
-        password = payload.password
-    else:
-        form_data = await request.form()
-        email = str(form_data.get('username') or form_data.get('email') or '')
-        password = str(form_data.get('password') or '')
 
-    if not email or not password:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail='Email/username and password are required',
-        )
-
-    auth_result = await service.login(email, password, user_service, refresh_session_service)
+@router.post('/login-json', response_model=AccessTokenResponse)
+async def login_json(
+    payload: LoginRequest,
+    service: AuthServiceDep,
+    user_service: UserServiceDep,
+    refresh_session_service: RefreshSessionServiceDep,
+    response: Response,
+):
+    auth_result = await service.login(
+        payload.email,
+        payload.password,
+        user_service,
+        refresh_session_service,
+    )
     response.set_cookie(
         key='refresh_token',
         value=auth_result.refresh_token,

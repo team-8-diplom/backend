@@ -44,6 +44,13 @@ docker compose down -v
 docker compose up --force-recreate
 ```
 
+Admin login
+```env
+admin_email = 'admin@admin.com'
+admin_password = 'admin123'
+```
+
+
 ### 4. Endpoints
 - App entry point: `http://localhost:${WEB_PORT:-8080}/`
 - API via reverse proxy: `http://localhost:${WEB_PORT:-8080}/api/v1/...`
