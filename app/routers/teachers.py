@@ -25,12 +25,11 @@ async def get_teachers(service: TeacherServiceDep):
     '/',
     response_model=TeacherPublic,
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Security(require_permission, scopes=['teachers:create'])],
 )
 async def create_teacher(
         teacher: TeacherCreate,
         service: TeacherServiceDep,
-        current_user: Annotated[User, Security(require_permission)],
+        current_user: Annotated[User, Security(require_permission, scopes=['teachers:create'])],
 ):
     created = await service.create(teacher, user_id=current_user.id)
     return TeacherPublic.model_validate(created)

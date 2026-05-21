@@ -34,7 +34,7 @@ router = APIRouter(prefix='/auth', tags=['Authentication'])
 @router.post(
     '/register', response_model=UserPublic, status_code=status.HTTP_201_CREATED
 )
-async def register(  # noqa: PLR0913
+async def register(
     user_data: UserCreate,
     background_tasks: BackgroundTasks,
     service: AuthServiceDep,
@@ -60,7 +60,7 @@ async def login(
     refresh_session_service: RefreshSessionServiceDep,
     response: Response,
 ):
-    auth_result = await service.login(
+    auth_result = await service.login_with_form(
         form_data,
         user_service,
         refresh_session_service,
@@ -77,7 +77,7 @@ async def login(
     return AccessTokenResponse(access_token=auth_result.access_token)
 
 
-@router.post('/login-json', response_model=AccessTokenResponse)
+@router.post('/login-payload', response_model=AccessTokenResponse)
 async def login_json(
     payload: LoginRequest,
     service: AuthServiceDep,
@@ -101,6 +101,28 @@ async def login_json(
         path='/',
     )
     return AccessTokenResponse(access_token=auth_result.access_token)
+
+
+@router.post(
+    '/login-json',
+    response_model=AccessTokenResponse,
+    deprecated=True,
+    include_in_schema=False,
+)
+async def login_json_legacy(
+    payload: LoginRequest,
+    service: AuthServiceDep,
+    user_service: UserServiceDep,
+    refresh_session_service: RefreshSessionServiceDep,
+    response: Response,
+):
+    return await login_json(
+        payload,
+        service,
+        user_service,
+        refresh_session_service,
+        response,
+    )
 
 
 @router.post('/password-reset', response_model=MessageResponse)
