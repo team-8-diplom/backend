@@ -1,106 +1,42 @@
 # Topic Picker Backend
 
-## Run with Docker Compose (for frontend developers)
+Цель проекта — цифровая платформа для централизованного выбора тем дипломных работ.
+Система помогает преподавателям публиковать темы, а студентам — подбирать их под навыки.
 
-### 1. Prerequisites
-- Docker Desktop (or Docker Engine + Compose plugin)
-- Access to DockerHub images for this project
+## Требования
+- Docker + Docker Compose
+- Файл `.env` в корне проекта
 
-### 2. Configure environment
-Create `.env` file in project root:
-
-```env
-DATABASE__DRIVER=postgresql+asyncpg
-DATABASE__HOST=db
-DATABASE__PORT=5433
-DATABASE__USER=postgres
-DATABASE__PASSWORD=postgres
-DATABASE__NAME=topic_picker
-
-DOCKERHUB_BACKEND_IMAGE=<your-dockerhub-namespace>/topic-picker-backend:<tag>
-# optional for local build/run
-# DOCKERHUB_BACKEND_IMAGE=topic-picker-backend:local
-```
-
-> `DOCKERHUB_BACKEND_IMAGE` must point to a published backend image in DockerHub.
-
-### 3. Start project
+## Запуск
 ```bash
 docker compose up
 ```
 
+## Основные адреса
+- Приложение: `http://localhost:${WEB_PORT:-80}/`
+- API: `http://localhost:${WEB_PORT:-80}/api/v1/...`
+- Swagger UI: `http://localhost:${WEB_PORT:-80}/docs`
 
-### 3.1 If Compose still uses old DB host/port
-If you previously ran with `127.0.0.1:5433`, recreate containers to apply fresh env/config:
+## Переменные окружения
+Создайте `.env` на основе `.env.example`.
 
-```bash
-docker compose down
-docker compose up --force-recreate
-```
-
-Optional full reset (will remove DB data):
-```bash
-docker compose down -v
-docker compose up --force-recreate
-```
-
-Admin login
-```env
-admin_email = 'admin@admin.com'
-admin_password = 'admin123'
-```
-
-
-### 4. Endpoints
-- App entry point: `http://localhost:${WEB_PORT:-8080}/`
-- API via reverse proxy: `http://localhost:${WEB_PORT:-8080}/api/v1/...`
-- Swagger UI: `http://localhost:${WEB_PORT:-8080}/docs`
-- OpenAPI JSON: `http://localhost:${WEB_PORT:-8080}/openapi.json`
-- ReDoc: `http://localhost:${WEB_PORT:-8080}/redoc`
-
-### 5. Architecture notes
-- Nginx exposes port `80`; PostgreSQL can be exposed as `${DATABASE_EXPOSE_PORT}` (default `5433`) for local tools.
-- `/api/*` is proxied by Nginx to backend service.
-- Non-API paths return static `index.html`.
-- PostgreSQL uses persistent named volume `pg_data`.
-- If old DB volume was initialized with another internal port, run `docker compose down -v` once to reinitialize PostgreSQL on container port `5433`.
-- Startup order: `db` -> `migrate` -> `bootstrap-rbac` -> `api` -> `nginx` (RBAC runs via `app.commands.bootstrap_auth`).
-
-- `migrate` and `bootstrap-rbac` are one-shot jobs and should finish with status `exited (0)`.
-
-## Build and publish backend image (maintainers)
-
-```bash
-docker build -t <your-dockerhub-namespace>/topic-picker-backend:<tag> .
-docker push <your-dockerhub-namespace>/topic-picker-backend:<tag>
-```
-
-The Dockerfile uses:
-- `python:3.13.3-slim-bookworm`
-- multi-stage build
-- `uv` for dependency sync
-- non-root runtime user
-- curl-based container healthcheck
-
-
-### If you see old code inside containers
-Run with local rebuild to avoid stale DockerHub image:
-```bash
-docker compose build --no-cache
-docker compose up --force-recreate
-```
-
-
-### If migrate says `No module named alembic`
-Do not mount project root over `/app` in runtime containers (it hides image `.venv`).
-Use the current compose file and rebuild:
-```bash
-docker compose build --no-cache
-docker compose up --force-recreate
-```
-
-
-### If you see an IIS 404 page on Windows
-IIS is serving port 80 on your host. Use compose port override (default now `8080`):
-- Open API: `http://localhost:8080/api/v1/...`
-- Or set another host port in `.env` via `WEB_PORT=8090`
+| Название | Описание | Значение по умолчанию |
+| --- | --- | --- |
+| DATABASE__DRIVER | Драйвер БД | `postgresql+asyncpg` |
+| DATABASE__HOST | Хост БД | `db` |
+| DATABASE__PORT | Порт БД (внутри docker-сети) | `5432` |
+| DATABASE__USER | Пользователь БД | `postgres` |
+| DATABASE__PASSWORD | Пароль БД | `postgres` |
+| DATABASE__NAME | Имя БД | `topic_picker` |
+| AUTH__JWT_SECRET_KEY | Ключ подписи JWT (минимум 32 символа) | — |
+| AUTH__JWT_ALGORITHM | Алгоритм JWT | `HS256` |
+| AUTH__JWT_ACCESS_TOKEN_LIFETIME_MINUTES | Время жизни access-токена | `15` |
+| AUTH__JWT_REFRESH_TOKEN_LIFETIME_DAYS | Время жизни refresh-токена | `7` |
+| AUTH__CONFIRMATION_TOKEN_LIFETIME_HOURS | Время жизни токена подтверждения аккаунта | `24` |
+| AUTH__RESET_PASSWORD_TOKEN_LIFETIME_MINUTES | Время жизни токена сброса пароля | `30` |
+| AUTH_BOOTSTRAP__ADMIN_EMAIL | Email bootstrap-админа | `admin@admin.com` |
+| AUTH_BOOTSTRAP__ADMIN_PASSWORD | Пароль bootstrap-админа | `admin123` |
+| AUTH_BOOTSTRAP__DEFAULT_USER_ROLE | Роль по умолчанию для нового пользователя | `public` |
+| AUTH_BOOTSTRAP__ADMIN_ROLE | Административная роль | `admin` |
+| NOTIFICATIONS__FRONTEND_BASE_URL | Базовый URL фронтенда для ссылок в письмах | `http://localhost` |
+| WEB_PORT | Порт nginx на хосте | `80` |

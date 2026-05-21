@@ -65,21 +65,11 @@ class AuthService:
 
     async def login(
         self,
-        email_or_form,
-        password_or_user_service,
-        user_service_or_refresh,
-        refresh_session_service: RefreshSessionService | None = None,
+        email: str,
+        password: str,
+        user_service,
+        refresh_session_service: RefreshSessionService,
     ) -> TokenPairResponse:
-        if refresh_session_service is None:
-            form_data = email_or_form
-            user_service = password_or_user_service
-            refresh_session_service = user_service_or_refresh
-            email = str(getattr(form_data, 'username', ''))
-            password = str(getattr(form_data, 'password', ''))
-        else:
-            email = str(email_or_form)
-            password = str(password_or_user_service)
-            user_service = user_service_or_refresh
 
         user = await user_service.authenticate(email, password)
         if not user:
@@ -88,6 +78,19 @@ class AuthService:
                 detail='Invalid email or password',
             )
         return await self._issue_token_pair(user.id, refresh_session_service)
+
+    async def login_with_form(
+        self,
+        form_data,
+        user_service,
+        refresh_session_service: RefreshSessionService,
+    ) -> TokenPairResponse:
+        return await self.login(
+            str(getattr(form_data, 'username', '')),
+            str(getattr(form_data, 'password', '')),
+            user_service,
+            refresh_session_service,
+        )
 
     async def request_password_reset(
         self, email: str, user_service, email_service, background_tasks: BackgroundTasks
