@@ -1,11 +1,12 @@
+from http import HTTPStatus
 from uuid import uuid4
 
 import pytest
 from fastapi.testclient import TestClient
+from pytest_subtests import SubTests
 
 from app.dependencies.rbac import require_permission
 from app.main import app
-
 
 PATH_PARAMS = {
     'user_id',
@@ -59,18 +60,26 @@ def client() -> TestClient:
     ('method', 'path', 'payload'),
     [
         ('POST', '/api/v1/auth/password-reset', {'email': 'u@test.com'}),
-        ('POST', '/api/v1/auth/password-change', {'token': 'abc', 'new_password': 'pass12345'}),
+        (
+            'POST',
+            '/api/v1/auth/password-change',
+            {'token': 'abc', 'new_password': 'pass12345'},
+        ),
         ('POST', '/api/v1/auth/confirm-account', {'token': 'abc'}),
     ],
 )
-def test_auth_routes_do_not_raise_server_errors(client: TestClient, method: str, path: str, payload: dict):
+def test_auth_routes_do_not_raise_server_errors(
+    client: TestClient, method: str, path: str, payload: dict
+):
     response = client.request(method, path, json=payload)
-    assert response.status_code < 500, (
+    assert response.status_code < HTTPStatus.INTERNAL_SERVER_ERROR, (
         f'{method} {path} returned {response.status_code}: {response.text}'
     )
 
 
-def test_all_api_routes_are_contract_safe_no_5xx(client: TestClient):
+def test_all_api_routes_are_contract_safe_no_5xx(
+    client: TestClient, subtests: SubTests
+):
     openapi = app.openapi()['paths']
     checks: list[tuple[str, str, dict]] = []
 
@@ -86,7 +95,8 @@ def test_all_api_routes_are_contract_safe_no_5xx(client: TestClient):
             checks.append((method.upper(), _replace_path_params(path), kwargs))
 
     for method, url, kwargs in checks:
-        response = client.request(method, url, **kwargs)
-        assert response.status_code < 500, (
-            f'{method} {url} returned {response.status_code}: {response.text}'
-        )
+        with subtests.test(msg=f'{method} {url}', method=method, url=url):
+            response = client.request(method, url, **kwargs)
+            assert response.status_code < HTTPStatus.INTERNAL_SERVER_ERROR, (
+                f'{method} {url} returned {response.status_code}: {response.text}'
+            )

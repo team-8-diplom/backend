@@ -1,14 +1,19 @@
+from fastapi.templating import Jinja2Templates
+
+templates = Jinja2Templates(directory='templates')
+
+
 def account_confirmation_template(confirmation_link: str) -> tuple[str, str]:
-    body = (
-        '<h3>Welcome!</h3><p>Confirm account: '
-        f'<a href="{confirmation_link}">{confirmation_link}</a></p>'
-    )
-    return ('Confirm your account', body)
+    subject = 'Подтверждение регистрации'
+    template = templates.get_template('account_confirmation.html')
+    body = template.render(confirmation_link=confirmation_link)
+
+    return (subject, body)
 
 
 def reset_password_template(reset_link: str) -> tuple[str, str]:
-    body = (
-        '<h3>Password reset</h3><p>Reset password: '
-        f'<a href="{reset_link}">{reset_link}</a></p>'
-    )
-    return ('Reset your password', body)
+    subject = 'Восстановление пароля'
+    template = templates.get_template('reset_password.html')
+    body = template.render(reset_link=reset_link)
+
+    return (subject, body)

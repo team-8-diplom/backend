@@ -27,7 +27,9 @@ class UserService:
         return email.strip().lower()
 
     async def get_by_email(self, email: str) -> Optional[User]:
-        return await self._repository.get_by_field('email', self._normalize_email(email))
+        return await self._repository.get_by_field(
+            'email', self._normalize_email(email)
+        )
 
     async def create(self, data: UserCreate) -> User:
         user_data = {
@@ -39,7 +41,7 @@ class UserService:
             return await self._repository.save(user)
         except IntegrityError as exc:
             await self._repository.session.rollback()
-            if "ix_users_email" in str(exc):
+            if 'ix_users_email' in str(exc):
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail='Email already registered',
@@ -55,7 +57,7 @@ class UserService:
             return await self._repository.update(user_id, update_data)
         except IntegrityError as exc:
             await self._repository.session.rollback()
-            if "ix_users_email" in str(exc):
+            if 'ix_users_email' in str(exc):
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail='Email already registered',

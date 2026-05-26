@@ -9,7 +9,11 @@ def _collect_routes():
         if not hasattr(route, 'path') or not hasattr(route, 'methods'):
             continue
         path = route.path
-        if path.startswith('/openapi') or path.startswith('/docs') or path.startswith('/redoc'):
+        if (
+            path.startswith('/openapi')
+            or path.startswith('/docs')
+            or path.startswith('/redoc')
+        ):
             continue
         for method in route.methods - {'HEAD', 'OPTIONS'}:
             routes[path].add(method)
@@ -60,7 +64,9 @@ def test_all_expected_routes_registered():
             missing[path] = f'missing path, expected methods={sorted(methods)}'
             continue
         if not methods.issubset(existing):
-            missing[path] = f'expected methods={sorted(methods)}, got={sorted(existing)}'
+            missing[path] = (
+                f'expected methods={sorted(methods)}, got={sorted(existing)}'
+            )
 
     assert not missing, missing
 

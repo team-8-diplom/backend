@@ -15,7 +15,6 @@ class PermissionService:
     def __init__(self, session: SessionDep):
         self._repository = Repository(session=session, model=Permission)
 
-
     async def _repo_create(self, repository: Repository, data: dict):
         create_method = getattr(repository, 'create', None)
         if callable(create_method):
@@ -79,7 +78,6 @@ class RoleService:
         )
         self._user_role_repository = Repository(session=session, model=UserRoleLink)
         self._user_repository = Repository(session=session, model=User)
-
 
     async def _repo_create(self, repository: Repository, data: dict):
         create_method = getattr(repository, 'create', None)

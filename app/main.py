@@ -37,16 +37,12 @@ app.add_middleware(
 )
 
 
-async def _ratelimit_exception_handler(request, exc):
-    return await exception_handler(request, exc)
-
-
 if settings.ratelimit.enabled:
     app.state.limiter = Limiter(
         key_func=get_remote_address,
         default_limits=[settings.ratelimit.default_limit],
     )
-    app.add_exception_handler(RateLimitExceeded, _ratelimit_exception_handler)
+    app.add_exception_handler(RateLimitExceeded, exception_handler)
     app.add_middleware(SlowAPIMiddleware)
 
 api_router = APIRouter(prefix='/api/v1', responses=common_responses)

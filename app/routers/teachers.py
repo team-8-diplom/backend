@@ -1,4 +1,4 @@
-from typing import List, Annotated
+from typing import Annotated, List
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Security, status
@@ -27,9 +27,11 @@ async def get_teachers(service: TeacherServiceDep):
     status_code=status.HTTP_201_CREATED,
 )
 async def create_teacher(
-        teacher: TeacherCreate,
-        service: TeacherServiceDep,
-        current_user: Annotated[User, Security(require_permission, scopes=['teachers:create'])],
+    teacher: TeacherCreate,
+    service: TeacherServiceDep,
+    current_user: Annotated[
+        User, Security(require_permission, scopes=['teachers:create'])
+    ],
 ):
     created = await service.create(teacher, user_id=current_user.id)
     return TeacherPublic.model_validate(created)

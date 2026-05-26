@@ -21,9 +21,7 @@ async def exception_handler(_: Request, exc: Exception):
                 break
 
     error_message = exc.message if hasattr(exc, 'message') else str(exc)
-    logger.error(
-        f'Handled exception: {exc.__class__.__name__} - {error_message}'
-    )
+    logger.error(f'Handled exception: {exc.__class__.__name__} - {error_message}')
 
     return JSONResponse(
         status_code=status_code,
