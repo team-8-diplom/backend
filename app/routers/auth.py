@@ -33,7 +33,7 @@ router = APIRouter(prefix='/auth', tags=['Authentication'])
 @router.post(
     '/register', response_model=UserPublic, status_code=status.HTTP_201_CREATED
 )
-async def register(  # noqa: PLR0913
+async def register(
     user_data: UserCreate,
     background_tasks: BackgroundTasks,
     service: AuthServiceDep,
