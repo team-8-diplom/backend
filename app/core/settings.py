@@ -5,12 +5,12 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class DatabaseSettings(BaseModel):
-    schema: str = 'postgresql+asyncpg'
-    host: str = '127.0.0.1'
+    driver: str = 'postgresql+asyncpg'
+    host: str = 'db'
     user: str = 'postgres'
     password: str = 'pass'
-    port: int = 5433
-    name: str = 'db'
+    port: int = 5432
+    name: str = 'topic_picker'
 
 
 class AuthSettings(BaseModel):
@@ -68,7 +68,9 @@ class Settings(BaseSettings):
     ratelimit: RateLimitSettings = RateLimitSettings()
 
     model_config = SettingsConfigDict(
-        env_file='.env', env_nested_delimiter='__', extra='ignore'
+        env_file='.env',
+        env_nested_delimiter='__',
+        extra='ignore',
     )
 
 

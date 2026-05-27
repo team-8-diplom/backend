@@ -9,7 +9,10 @@ async def request_logging_middleware(request: Request, call_next):
     try:
         response = await call_next(request)
         logger.info(
-            f'Request completed: {request.method} {request.url.path} status={response.status_code}'
+            'Request completed: %s %s status=%s',
+            request.method,
+            request.url.path,
+            response.status_code,
         )
         return response
     except Exception as exc:

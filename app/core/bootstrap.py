@@ -91,7 +91,8 @@ class AuthBootstrap:
             )
             return
 
-        users = await self._user_service.get_all()
+        users_result = await self._user_service.get_all()
+        users = users_result[0] if isinstance(users_result, tuple) else users_result
         assigned_count = 0
         for user in users:
             roles = await self._role_service.get_user_roles(user.id)

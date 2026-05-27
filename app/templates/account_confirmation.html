@@ -1,0 +1,20 @@
+{% extends "base_email.html" %}
+{% block title %}Подтверждение регистрации{% endblock %}
+
+{% block content %}
+<h1 style="margin: 0 0 16px 0; color: #1a1a1a; font-size: 24px; font-weight: 700;">Добро пожаловать!</h1>
+<p style="margin: 0 0 24px 0; color: #4a4a4a; font-size: 16px; line-height: 1.6;">Чтобы активировать ваш аккаунт, пожалуйста, подтвердите ваш адрес электронной почты.</p>
+
+<table cellspacing="0" cellpadding="0" style="margin: 0 0 24px 0;">
+    <tr>
+        <td style="border-radius: 6px; background-color: #2563eb;">
+            <a href="{{ confirmation_link }}" target="_blank" style="padding: 12px 24px; border: 1px solid #2563eb; border-radius: 6px; font-weight: 600; color: #ffffff; font-size: 16px; text-decoration: none; display: inline-block;">
+                Подтвердить аккаунт
+            </a>
+        </td>
+    </tr>
+</table>
+
+<p style="margin: 0 0 8px 0; color: #71717a; font-size: 14px;">Если кнопка не работает, скопируйте ссылку:</p>
+<p style="margin: 0; font-size: 14px; word-break: break-all;"><a href="{{ confirmation_link }}" style="color: #2563eb;">{{ confirmation_link }}</a></p>
+{% endblock %}
