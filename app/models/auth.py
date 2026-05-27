@@ -27,3 +27,8 @@ class PasswordChangeRequest(BaseModel):
 
 class ConfirmAccountRequest(BaseModel):
     token: str
+
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str

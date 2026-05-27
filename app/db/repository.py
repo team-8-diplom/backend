@@ -20,32 +20,54 @@ class Repository(Generic[T]):
         return list(result.scalars().all())
 
     async def get_by_id(self, obj_id: Union[int, UUID]) -> Optional[T]:
-        # Используем .get() - это быстрее и удобнее для поиска по PK
         return await self.session.get(self.model, obj_id)
 
     async def get_by_field(self, field: str, value: Any) -> Optional[T]:
         column = getattr(self.model, field)
         stmt = select(self.model).where(column == value)
         result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()
+
+    async def fetch_by_field(self, field: str, value: Any) -> List[T]:
+        column = getattr(self.model, field)
+        stmt = select(self.model).where(column == value)
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
+
+    async def create(self, data: Dict[str, Any]) -> T:  # Исправлен аргумент
+        new_item = self.model(**data)
+        self.session.add(new_item)
+        await self.session.commit()
+        await self.session.refresh(new_item)
+        return new_item
 
     async def update(
-        self, obj_id: Union[int, UUID], data: Dict[str, Any]
-    ) -> Optional[T]:  # Исправлен аргумент
+        self,
+        obj_id: Union[int, UUID],
+        data: Dict[str, Any] | Any,
+    ) -> Optional[T]:
+        if hasattr(data, 'model_dump'):
+            update_data = data.model_dump(exclude_unset=True)
+        elif isinstance(data, dict):
+            update_data = data
+        else:
+            raise TypeError('update data must be a dict or Pydantic/SQLModel model')
+
         stmt = (
             update(self.model)
             .where(self.model.id == obj_id)
-            .values(**data)
+            .values(**update_data)
             .returning(self.model)
         )
         result = await self.session.execute(stmt)
         await self.session.commit()
         return result.scalar_one_or_none()
 
-    async def delete(self, obj_id: Union[int, UUID]) -> bool:
+    async def delete(self, obj_id: Union[int, UUID]) -> Optional[T]:
         stmt = delete(self.model).where(self.model.id == obj_id)
         result = await self.session.execute(stmt)
         await self.session.commit()
-        return result.rowcount > 0
+        return result.scalar_one_or_none()
 
     async def save(self, item: T) -> T:
         self.session.add(item)

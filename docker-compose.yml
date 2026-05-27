@@ -1,0 +1,74 @@
+name: topic-picker
+
+x-back-image: &back-image ${DOCKERHUB_BACKEND_IMAGE:-topic-picker-backend:local}
+x-front-image: &front-image nginx:1.29-alpine
+
+x-back-common: &back-common
+  image: *back-image
+  restart: unless-stopped
+  env_file:
+    - .env
+
+services:
+  db:
+    image: postgres:17
+    restart: unless-stopped
+    ports:
+      - "5433:5432"
+    env_file:
+      - .env
+    environment:
+      POSTGRES_DB: ${DATABASE__NAME}
+      POSTGRES_USER: ${DATABASE__USER}
+      POSTGRES_PASSWORD: ${DATABASE__PASSWORD}
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB -p 5432"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  migrate:
+    <<: *back-common
+    restart: "no"
+    command: ["alembic", "upgrade", "head"]
+    depends_on:
+      db:
+        condition: service_healthy
+
+  bootstrap-rbac:
+    <<: *back-common
+    restart: "no"
+    command: ["python", "-m", "app.commands.bootstrap_auth"]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  api:
+    <<: *back-common
+    command: ["gunicorn", "app.main:app", "-c", "gunicorn.conf.py"]
+    depends_on:
+      bootstrap-rbac:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8000/"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+
+  nginx:
+    image: *front-image
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "${WEB_PORT:-80}:80"
+    volumes:
+      - ./deploy/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./deploy/nginx/index.html:/usr/share/nginx/html/index.html:ro
+
+volumes:
+  pg_data:
+    name: topic_picker_pg_data_v17

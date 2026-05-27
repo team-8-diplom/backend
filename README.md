@@ -1,5 +1,3 @@
-# Платформа выбора тем дипломных работ
-
 ## Описание проекта
 
 Цель проекта — разработать цифровую платформу для централизованного выбора тем дипломных работ.
@@ -20,112 +18,40 @@
 * автоматическое сопоставление тем и навыков студентов
 * систему уведомлений
 
-# Установка и запуск
+## Требования
+- Docker + Docker Compose
+- Файл `.env` в корне проекта
 
-### 1. Установить uv
-
-Если `uv` ещё не установлен:
-
+## Запуск
 ```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh
+docker compose up
 ```
 
-или через pip:
+## Основные адреса
+- Приложение: `http://localhost:${WEB_PORT:-80}/`
+- API: `http://localhost:${WEB_PORT:-80}/api/v1/...`
+- Swagger UI: `http://localhost:${WEB_PORT:-80}/docs`
 
-```bash
-pip install uv
-```
+## Переменные окружения
+Создайте `.env` на основе `.env.example`.
 
-Проверить установку:
-
-```bash
-uv --version
-```
-
-
-
-### 2. Клонировать репозиторий
-
-```bash
-git clone https://github.com/your-repository/topic-platform.git
-cd topic-platform
-```
-
-
-
-### 3. Установить зависимости
-
-Если используется `pyproject.toml`:
-
-```bash
-uv sync
-```
-
-### 4. Запуск приложения
-
-```bash
-uv run uvicorn app.main:app --reload
-```
-
-
-
-### 5. Документация API
-
-После запуска приложение будет доступно:
-
-API:
-
-```
-http://127.0.0.1:8000
-```
-
-Swagger:
-
-```
-http://127.0.0.1:8000/docs
-```
-
-ReDoc:
-
-```
-http://127.0.0.1:8000/redoc
-```
-
-# Переменные среды
-Перед запуском необходимо указать переменные среды\
-Шаблон файла переменных среды - ```.env.example```\
-Переменные среды должны быть указаны в ```.env```
-
-| Название | Описание | Тип | Значение по умолчанию |
-| --- | --- | --- | --- |
-| DATABASE__SCHEMA | Протокол подключения к БД | Строка, драйвер | postgresql+asyncpg |
-| DATABASE__HOST | Хост БД | Строка | 127.0.0.1 |
-| DATABASE__PORT | Порт БД | Число | 5432 |
-| DATABASE__USER | Имя пользователя в БД | Строка | postgres |
-| DATABASE__PASSWORD | Пароль БД | Строка | pass |
-| DATABASE__NAME | Название БД | Строка | db |
-| AUTH__JWT_SECRET_KEY | Секретный ключ для подписи JWT токенов (мин. 32 символа) | Строка | secret-key-change-in-production |
-| AUTH__JWT_ALGORITHM | Алгоритм шифрования JWT | Строка | HS256 |
-| AUTH__JWT_ACCESS_TOKEN_LIFETIME_MINUTES | Время жизни access-токена в минутах | Число | 15 |
-| AUTH__JWT_REFRESH_TOKEN_LIFETIME_DAYS | Время жизни refresh-токена в днях | Число | 7 |
-| AUTH_BOOTSTRAP__ADMIN_EMAIL | Email bootstrap-администратора | Строка | admin@admin.com |
-| AUTH_BOOTSTRAP__ADMIN_PASSWORD | Пароль bootstrap-администратора | Строка | admin123 |
-| AUTH_BOOTSTRAP__DEFAULT_USER_ROLE | Роль, назначаемая новым пользователям по умолчанию | Строка | public |
-| AUTH_BOOTSTRAP__ADMIN_ROLE | Роль с административными правами | Строка | admin |
-
-### Bootstrap RBAC
-Карта ролей и разрешений хранится в `app/core/permissions.py`, а через переменные среды настраиваются только названия ролей и учетные данные bootstrap-администратора.
-
-```bash
-uv run python -m app.commands.bootstrap_auth
-```
-### Запуск миграций
-```bash
-uv run alembic upgrade head
-```
-
-### Генерация миграций
-```bash
-uv run alembic revision --autogenerate -m "<коментарий>"
-```
-
+| Название | Описание | Значение по умолчанию |
+| --- | --- | --- |
+| DATABASE__DRIVER | Драйвер БД | `postgresql+asyncpg` |
+| DATABASE__HOST | Хост БД | `db` |
+| DATABASE__PORT | Порт БД (внутри docker-сети) | `5432` |
+| DATABASE__USER | Пользователь БД | `postgres` |
+| DATABASE__PASSWORD | Пароль БД | `postgres` |
+| DATABASE__NAME | Имя БД | `topic_picker` |
+| AUTH__JWT_SECRET_KEY | Ключ подписи JWT (минимум 32 символа) | — |
+| AUTH__JWT_ALGORITHM | Алгоритм JWT | `HS256` |
+| AUTH__JWT_ACCESS_TOKEN_LIFETIME_MINUTES | Время жизни access-токена | `15` |
+| AUTH__JWT_REFRESH_TOKEN_LIFETIME_DAYS | Время жизни refresh-токена | `7` |
+| AUTH__CONFIRMATION_TOKEN_LIFETIME_HOURS | Время жизни токена подтверждения аккаунта | `24` |
+| AUTH__RESET_PASSWORD_TOKEN_LIFETIME_MINUTES | Время жизни токена сброса пароля | `30` |
+| AUTH_BOOTSTRAP__ADMIN_EMAIL | Email bootstrap-админа | `admin@admin.com` |
+| AUTH_BOOTSTRAP__ADMIN_PASSWORD | Пароль bootstrap-админа | `admin123` |
+| AUTH_BOOTSTRAP__DEFAULT_USER_ROLE | Роль по умолчанию для нового пользователя | `public` |
+| AUTH_BOOTSTRAP__ADMIN_ROLE | Административная роль | `admin` |
+| NOTIFICATIONS__FRONTEND_BASE_URL | Базовый URL фронтенда для ссылок в письмах | `http://localhost` |
+| WEB_PORT | Порт nginx на хосте | `80` |

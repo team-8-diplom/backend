@@ -1,12 +1,12 @@
 import logging
+import sys
 
-file_handler = logging.FileHandler('my_log.log')
-console_handler = logging.StreamHandler()
+console_handler = logging.StreamHandler(sys.stdout)
 
 logging.basicConfig(
     level=logging.WARNING,
     format='%(asctime)s [%(levelname)s] %(message)s',
-    handlers=[file_handler, console_handler],
+    handlers=[console_handler],
 )
 
 logger = logging.getLogger(__name__)

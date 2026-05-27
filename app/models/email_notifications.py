@@ -3,6 +3,7 @@ from enum import Enum
 from typing import Optional
 from uuid import UUID
 
+from sqlalchemy import String
 from sqlmodel import Field, SQLModel
 
 from app.models.base import Base
@@ -29,7 +30,10 @@ class EmailNotificationCreate(EmailNotificationBase):
 class EmailNotification(Base, EmailNotificationBase, table=True):
     __tablename__ = 'email_notifications'
 
-    status: EmailNotificationStatus = Field(default=EmailNotificationStatus.pending)
+    status: str = Field(
+        default=EmailNotificationStatus.pending.value,
+        sa_type=String(20),
+    )
     error_message: Optional[str] = Field(default=None, max_length=1000)
     sent_at: Optional[datetime] = Field(default=None)
     created_at: datetime = Field(

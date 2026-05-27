@@ -17,6 +17,7 @@ from app.models.email_notifications import (
     EmailNotificationCreate,
     EmailNotificationStatus,
 )
+from app.models.pagination import Page
 from app.models.refresh_sessions import RefreshSession, RefreshSessionCreate
 from app.models.roles import Permission, Role, RolePermission, UserRoleLink
 from app.models.saved_topics import SavedTopic, SavedTopicCreate, SavedTopicPublic
