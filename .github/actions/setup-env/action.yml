@@ -1,5 +1,5 @@
 name: Setup Python Environment
-description: Checkout code, install Python 3.13, uv, and project dependencies
+description: Install Python 3.13, uv, project dependencies, and optional Ansible/SSH tooling
 
 inputs:
   python-version:
@@ -18,13 +18,14 @@ inputs:
     description: SSH known_hosts entries for target hosts
     required: false
     default: ''
+  ansible-requirements:
+    description: Path to ansible-galaxy requirements file
+    required: false
+    default: ansible/requirements.yml
 
 runs:
   using: composite
   steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
     - name: Install uv
       uses: astral-sh/setup-uv@v4
 
@@ -42,6 +43,14 @@ runs:
       shell: bash
       run: uv pip install ansible
 
+    - name: Install Ansible collections
+      if: inputs.install-ansible == 'true'
+      shell: bash
+      run: |
+        if [ -f "${{ inputs.ansible-requirements }}" ]; then
+          uv run ansible-galaxy collection install -r "${{ inputs.ansible-requirements }}"
+        fi
+
     - name: Configure SSH
       if: inputs.install-ansible == 'true' && inputs.ssh-private-key != ''
       shell: bash
@@ -51,6 +60,4 @@ runs:
         chmod 600 ~/.ssh/id_rsa
         if [ -n "${{ inputs.ssh-known-hosts }}" ]; then
           echo "${{ inputs.ssh-known-hosts }}" >> ~/.ssh/known_hosts
-        else
-          ssh-keyscan -H "${{ inputs.ssh-known-hosts }}" >> ~/.ssh/known_hosts 2>/dev/null || true
         fi
