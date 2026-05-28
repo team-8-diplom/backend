@@ -1,7 +1,8 @@
+from collections.abc import Sequence
 from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, Union
 from uuid import UUID
 
-from sqlalchemy import delete, func, select, update
+from sqlalchemy import delete, func, inspect, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.base import Base
@@ -19,8 +20,22 @@ class Repository(Generic[T]):
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 
-    async def get_by_id(self, obj_id: Union[int, UUID]) -> Optional[T]:
+    def _primary_key_columns(self) -> Sequence[Any]:
+        return inspect(self.model).primary_key
+
+    def _single_primary_key_column(self) -> Any | None:
+        primary_key_columns = self._primary_key_columns()
+        if len(primary_key_columns) != 1:
+            return None
+        return primary_key_columns[0]
+
+    async def get(self, obj_id: Union[int, UUID]) -> Optional[T]:
+        if self._single_primary_key_column() is None:
+            return None
         return await self.session.get(self.model, obj_id)
+
+    async def get_by_id(self, obj_id: Union[int, UUID]) -> Optional[T]:
+        return await self.get(obj_id)
 
     async def get_by_field(self, field: str, value: Any) -> Optional[T]:
         column = getattr(self.model, field)
@@ -53,9 +68,13 @@ class Repository(Generic[T]):
         else:
             raise TypeError('update data must be a dict or Pydantic/SQLModel model')
 
+        primary_key_column = self._single_primary_key_column()
+        if primary_key_column is None:
+            return None
+
         stmt = (
             update(self.model)
-            .where(self.model.id == obj_id)
+            .where(primary_key_column == obj_id)
             .values(**update_data)
             .returning(self.model)
         )
@@ -64,7 +83,15 @@ class Repository(Generic[T]):
         return result.scalar_one_or_none()
 
     async def delete(self, obj_id: Union[int, UUID]) -> Optional[T]:
-        stmt = delete(self.model).where(self.model.id == obj_id)
+        primary_key_column = self._single_primary_key_column()
+        if primary_key_column is None:
+            return None
+
+        stmt = (
+            delete(self.model)
+            .where(primary_key_column == obj_id)
+            .returning(self.model)
+        )
         result = await self.session.execute(stmt)
         await self.session.commit()
         return result.scalar_one_or_none()

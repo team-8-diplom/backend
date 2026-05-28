@@ -1,0 +1,71 @@
+name: Setup Python Environment
+description: Install Python 3.13, uv, project dependencies, and optional Ansible/SSH tooling
+
+inputs:
+  python-version:
+    description: Python version to install
+    required: false
+    default: '3.13'
+  install-ansible:
+    description: Whether to install Ansible and configure SSH
+    required: false
+    default: 'false'
+  ssh-private-key-b64:
+    description: Base64-encoded SSH private key for Ansible (required when install-ansible is true)
+    required: false
+    default: ''
+  ssh-known-hosts:
+    description: SSH known_hosts entries for target hosts
+    required: false
+    default: ''
+  ansible-requirements:
+    description: Path to ansible-galaxy requirements file
+    required: false
+    default: ansible/requirements.yml
+
+runs:
+  using: composite
+  steps:
+    - name: Install uv
+      uses: astral-sh/setup-uv@v4
+
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: Install project dependencies
+      shell: bash
+      run: uv sync --frozen
+
+    - name: Install Ansible
+      if: inputs.install-ansible == 'true'
+      shell: bash
+      run: uv pip install ansible ansible-lint docker requests
+
+    - name: Install Ansible collections
+      if: inputs.install-ansible == 'true'
+      shell: bash
+      run: |
+        if [ -f "${{ inputs.ansible-requirements }}" ]; then
+          uv run ansible-galaxy collection install -r "${{ inputs.ansible-requirements }}"
+        fi
+
+    - name: Install Ansible collections
+      if: inputs.install-ansible == 'true'
+      shell: bash
+      run: |
+        if [ -f "${{ inputs.ansible-requirements }}" ]; then
+          uv run ansible-galaxy collection install -r "${{ inputs.ansible-requirements }}"
+        fi
+
+    - name: Configure SSH
+      if: inputs.install-ansible == 'true' && inputs.ssh-private-key-b64 != ''
+      shell: bash
+      run: |
+        mkdir -p ~/.ssh
+        printf '%s' "${{ inputs.ssh-private-key-b64 }}" | base64 --decode > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        if [ -n "${{ inputs.ssh-known-hosts }}" ]; then
+          printf '%s\n' "${{ inputs.ssh-known-hosts }}" >> ~/.ssh/known_hosts
+        fi

@@ -1,6 +1,9 @@
+from pathlib import Path
+
 from fastapi.templating import Jinja2Templates
 
-templates = Jinja2Templates(directory='templates')
+TEMPLATES_DIR = Path(__file__).resolve().parents[1] / 'templates'
+templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
 
 def account_confirmation_template(confirmation_link: str) -> tuple[str, str]:
