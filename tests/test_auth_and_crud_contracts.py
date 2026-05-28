@@ -2,7 +2,8 @@ from http import HTTPStatus
 from uuid import uuid4
 
 import pytest
-from fastapi.testclient import TestClient
+import pytest_asyncio
+from httpx import AsyncClient
 from pytest_subtests import SubTests
 
 from app.dependencies.rbac import require_permission
@@ -53,12 +54,11 @@ def _dummy_json_for_operation(op: dict) -> dict:
     return body
 
 
-@pytest.fixture
-def client() -> TestClient:
+@pytest_asyncio.fixture
+async def contract_client(client: AsyncClient):
     app.dependency_overrides[require_permission] = lambda: None
-    with TestClient(app) as test_client:
-        yield test_client
-    app.dependency_overrides.clear()
+    yield client
+    app.dependency_overrides.pop(require_permission, None)
 
 
 @pytest.mark.parametrize(
@@ -73,17 +73,17 @@ def client() -> TestClient:
         ('POST', '/api/v1/auth/confirm-account', {'token': 'abc'}),
     ],
 )
-def test_auth_routes_do_not_raise_server_errors(
-    client: TestClient, method: str, path: str, payload: dict
+async def test_auth_routes_do_not_raise_server_errors(
+    contract_client: AsyncClient, method: str, path: str, payload: dict
 ):
-    response = client.request(method, path, json=payload)
+    response = await contract_client.request(method, path, json=payload)
     assert response.status_code < HTTPStatus.INTERNAL_SERVER_ERROR, (
         f'{method} {path} returned {response.status_code}: {response.text}'
     )
 
 
-def test_all_api_routes_are_contract_safe_no_5xx(
-    client: TestClient, subtests: SubTests
+async def test_all_api_routes_are_contract_safe_no_5xx(
+    contract_client: AsyncClient, subtests: SubTests
 ):
     openapi = app.openapi()['paths']
     checks: list[tuple[str, str, dict]] = []
@@ -101,7 +101,7 @@ def test_all_api_routes_are_contract_safe_no_5xx(
 
     for method, url, kwargs in checks:
         with subtests.test(msg=f'{method} {url}', method=method, url=url):
-            response = client.request(method, url, **kwargs)
+            response = await contract_client.request(method, url, **kwargs)
             assert response.status_code < HTTPStatus.INTERNAL_SERVER_ERROR, (
                 f'{method} {url} returned {response.status_code}: {response.text}'
             )
