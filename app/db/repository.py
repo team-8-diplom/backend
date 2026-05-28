@@ -19,8 +19,11 @@ class Repository(Generic[T]):
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 
-    async def get_by_id(self, obj_id: Union[int, UUID]) -> Optional[T]:
+    async def get(self, obj_id: Union[int, UUID]) -> Optional[T]:
         return await self.session.get(self.model, obj_id)
+
+    async def get_by_id(self, obj_id: Union[int, UUID]) -> Optional[T]:
+        return await self.get(obj_id)
 
     async def get_by_field(self, field: str, value: Any) -> Optional[T]:
         column = getattr(self.model, field)
@@ -64,7 +67,11 @@ class Repository(Generic[T]):
         return result.scalar_one_or_none()
 
     async def delete(self, obj_id: Union[int, UUID]) -> Optional[T]:
-        stmt = delete(self.model).where(self.model.id == obj_id)
+        stmt = (
+            delete(self.model)
+            .where(self.model.id == obj_id)
+            .returning(self.model)
+        )
         result = await self.session.execute(stmt)
         await self.session.commit()
         return result.scalar_one_or_none()

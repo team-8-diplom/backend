@@ -1,0 +1,32 @@
+- name: Deploy application
+  hosts: production
+  gather_facts: false
+  vars:
+    app_dir: /opt/topic-picker
+    image_tag: "{{ lookup('env', 'IMAGE_TAG') | default('topic-picker-backend:latest', true) }}"
+  tasks:
+    - name: Create application directory
+      ansible.builtin.file:
+        path: "{{ app_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Copy docker-compose.yml
+      ansible.builtin.copy:
+        src: "{{ playbook_dir }}/../../docker-compose.yml"
+        dest: "{{ app_dir }}/docker-compose.yml"
+        mode: "0644"
+
+    - name: Copy deploy configs
+      ansible.builtin.copy:
+        src: "{{ playbook_dir }}/../../deploy/"
+        dest: "{{ app_dir }}/deploy/"
+        mode: "0644"
+
+    - name: Pull new images and restart services
+      community.docker.docker_compose_v2:
+        project_src: "{{ app_dir }}"
+        pull: always
+        remove_orphans: true
+      environment:
+        DOCKERHUB_BACKEND_IMAGE: "{{ image_tag }}"

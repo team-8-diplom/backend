@@ -11,14 +11,19 @@ from app.main import app
 PATH_PARAMS = {
     'user_id',
     'department_id',
+    'dept_id',
     'student_id',
     'teacher_id',
     'topic_id',
     'skill_id',
     'user_skill_id',
+    'us_id',
     'topic_skill_id',
+    'ts_id',
     'application_id',
+    'app_id',
     'saved_topic_id',
+    'saved_id',
     'user_role_id',
 }
 
