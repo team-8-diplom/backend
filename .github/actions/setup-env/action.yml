@@ -1,0 +1,56 @@
+name: Setup Python Environment
+description: Checkout code, install Python 3.13, uv, and project dependencies
+
+inputs:
+  python-version:
+    description: Python version to install
+    required: false
+    default: '3.13'
+  install-ansible:
+    description: Whether to install Ansible and configure SSH
+    required: false
+    default: 'false'
+  ssh-private-key:
+    description: SSH private key for Ansible (required when install-ansible is true)
+    required: false
+    default: ''
+  ssh-known-hosts:
+    description: SSH known_hosts entries for target hosts
+    required: false
+    default: ''
+
+runs:
+  using: composite
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v4
+
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: Install project dependencies
+      shell: bash
+      run: uv sync --frozen
+
+    - name: Install Ansible
+      if: inputs.install-ansible == 'true'
+      shell: bash
+      run: uv pip install ansible
+
+    - name: Configure SSH
+      if: inputs.install-ansible == 'true' && inputs.ssh-private-key != ''
+      shell: bash
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ inputs.ssh-private-key }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        if [ -n "${{ inputs.ssh-known-hosts }}" ]; then
+          echo "${{ inputs.ssh-known-hosts }}" >> ~/.ssh/known_hosts
+        else
+          ssh-keyscan -H "${{ inputs.ssh-known-hosts }}" >> ~/.ssh/known_hosts 2>/dev/null || true
+        fi

@@ -1,0 +1,15 @@
+- name: Build and push Docker image
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    image_tag: "{{ lookup('env', 'IMAGE_TAG') | default('topic-picker-backend:latest', true) }}"
+  tasks:
+    - name: Build Docker image
+      community.docker.docker_image:
+        name: "{{ image_tag }}"
+        source: build
+        build:
+          path: "{{ playbook_dir }}/../../"
+        push: true
+        force_source: true
