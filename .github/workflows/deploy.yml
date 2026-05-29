@@ -12,6 +12,8 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+
       - uses: ./.github/actions/setup-env
         with:
           python-version: '3.13'
@@ -24,9 +26,11 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       new_release_published: ${{ steps.semantic.outputs.new_release_published }}
-      new_release_version: ${{ steps.semantic.outputs.new_release_version }}
+      new_release_git_tag: ${{ steps.semantic.outputs.new_release_git_tag }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Semantic Release
         id: semantic
@@ -39,8 +43,12 @@ jobs:
     if: needs.release.outputs.new_release_published == 'true'
     runs-on: ubuntu-latest
     env:
-      IMAGE_TAG: ${{ secrets.DOCKER_REGISTRY }}/topic-picker-backend:${{ needs.release.outputs.new_release_version }}
+      IMAGE_TAG: ${{ secrets.DOCKER_REGISTRY }}/topic-picker-backend:${{ needs.release.outputs.new_release_git_tag }}
+      VM_HOST: ${{ secrets.VM_HOST }}
+      VM_USER: ${{ secrets.VM_USER }}
     steps:
+      - uses: actions/checkout@v4
+
       - uses: ./.github/actions/setup-env
         with:
           python-version: '3.13'
