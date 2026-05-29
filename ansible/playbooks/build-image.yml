@@ -1,13 +1,35 @@
+---
 - name: Build and push Docker image
   hosts: localhost
   connection: local
   gather_facts: false
   vars:
-    image_tag: "{{ lookup('env', 'IMAGE_TAG') | default('topic-picker-backend:latest', true) }}"
+    docker_image_name: "{{ lookup('env', 'DOCKER_IMAGE_NAME') }}"
+    docker_image_tag: "{{ lookup('env', 'DOCKER_IMAGE_TAG') }}"
+    docker_user: "{{ lookup('env', 'DOCKER_USER') }}"
+    docker_token: "{{ lookup('env', 'DOCKER_TOKEN') }}"
+    docker_image_ref: "{{ docker_user }}/{{ docker_image_name }}:{{ docker_image_tag }}"
   tasks:
-    - name: Build Docker image
+    - name: Validate Docker image inputs
+      ansible.builtin.assert:
+        that:
+          - docker_image_name | length > 0
+          - docker_image_tag | length > 0
+          - docker_user | length > 0
+          - docker_token | length > 0
+        fail_msg: >-
+          DOCKER_IMAGE_NAME, DOCKER_IMAGE_TAG, DOCKER_USER and DOCKER_TOKEN
+          must be provided in the CI environment.
+
+    - name: Log in to Docker registry
+      community.docker.docker_login:
+        username: "{{ docker_user }}"
+        password: "{{ docker_token }}"
+      no_log: true
+
+    - name: Build and push Docker image
       community.docker.docker_image:
-        name: "{{ image_tag }}"
+        name: "{{ docker_image_ref }}"
         source: build
         build:
           path: "{{ playbook_dir }}/../../"

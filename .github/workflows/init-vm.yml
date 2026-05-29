@@ -20,10 +20,8 @@ jobs:
         with:
           python-version: '3.13'
           install-ansible: 'true'
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          ssh-private-key-b64: ${{ secrets.SSH_PRIVATE_KEY_B64 }}
           ssh-known-hosts: ${{ secrets.SSH_KNOWN_HOSTS }}
 
       - name: Run init-vm playbook
-        run: >
-          ansible-playbook ansible/playbooks/init-vm.yml
-          -i ansible/inventory.yml
+        run: ansible-playbook ansible/playbooks/init-vm.yml -i ansible/inventory.yml

@@ -1,10 +1,28 @@
+---
 - name: Deploy application
   hosts: production
   gather_facts: false
   vars:
     app_dir: /opt/topic-picker
-    image_tag: "{{ lookup('env', 'IMAGE_TAG') | default('topic-picker-backend:latest', true) }}"
+    docker_image_name: "{{ lookup('env', 'DOCKER_IMAGE_NAME') }}"
+    docker_image_tag: "{{ lookup('env', 'DOCKER_IMAGE_TAG') }}"
+    docker_user: "{{ lookup('env', 'DOCKER_USER') }}"
+    docker_token: "{{ lookup('env', 'DOCKER_TOKEN') }}"
+    app_env: "{{ lookup('env', 'ENV') }}"
+    docker_image_ref: "{{ docker_user }}/{{ docker_image_name }}:{{ docker_image_tag }}"
   tasks:
+    - name: Validate deployment inputs
+      ansible.builtin.assert:
+        that:
+          - docker_image_name | length > 0
+          - docker_image_tag | length > 0
+          - docker_user | length > 0
+          - docker_token | length > 0
+          - app_env | length > 0
+        fail_msg: >-
+          DOCKER_IMAGE_NAME, DOCKER_IMAGE_TAG, DOCKER_USER, DOCKER_TOKEN and ENV
+          must be provided in the CI environment.
+
     - name: Create application directory
       ansible.builtin.file:
         path: "{{ app_dir }}"
@@ -23,10 +41,26 @@
         dest: "{{ app_dir }}/deploy/"
         mode: "0644"
 
+    - name: Write application environment file
+      ansible.builtin.copy:
+        dest: "{{ app_dir }}/.env"
+        mode: "0600"
+        content: |
+          {{ app_env | trim }}
+          DOCKERHUB_BACKEND_IMAGE={{ docker_image_ref }}
+      no_log: true
+
+    - name: Log in to Docker registry on target host
+      community.docker.docker_login:
+        username: "{{ docker_user }}"
+        password: "{{ docker_token }}"
+      no_log: true
+
     - name: Pull new images and restart services
       community.docker.docker_compose_v2:
         project_src: "{{ app_dir }}"
         pull: always
         remove_orphans: true
+        state: present
       environment:
-        DOCKERHUB_BACKEND_IMAGE: "{{ image_tag }}"
+        DOCKERHUB_BACKEND_IMAGE: "{{ docker_image_ref }}"
