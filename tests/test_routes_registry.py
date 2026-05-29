@@ -53,7 +53,7 @@ def test_all_expected_routes_registered():
         '/api/v1/applications/{app_id}': {'GET', 'PATCH', 'DELETE'},
         '/api/v1/saved-topics/': {'GET', 'POST'},
         '/api/v1/saved-topics/{saved_id}': {'GET', 'PATCH', 'DELETE'},
-        '/api/v1/user-roles/{user_id}/roles': {'GET', 'POST'},
+        '/api/v1/users/{user_id}/roles': {'GET', 'POST'},
     }
 
     missing = {}
