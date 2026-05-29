@@ -8,77 +8,8 @@
     docker_image_tag: "{{ lookup('env', 'DOCKER_IMAGE_TAG') }}"
     docker_user: "{{ lookup('env', 'DOCKER_USER') }}"
     docker_token: "{{ lookup('env', 'DOCKER_TOKEN') }}"
+    app_env: "{{ lookup('env', 'ENV') }}"
     docker_image_ref: "{{ docker_user }}/{{ docker_image_name }}:{{ docker_image_tag }}"
-    deploy_env:
-      DOCKERHUB_BACKEND_IMAGE: "{{ docker_image_ref }}"
-      WEB_PORT: "{{ lookup('env', 'WEB_PORT') | default('80', true) }}"
-      DATABASE__DRIVER: >-
-        {{ lookup('env', 'DATABASE__DRIVER') | default('postgresql+asyncpg', true) }}
-      DATABASE__HOST: "{{ lookup('env', 'DATABASE__HOST') | default('db', true) }}"
-      DATABASE__PORT: "{{ lookup('env', 'DATABASE__PORT') | default('5432', true) }}"
-      DATABASE__USER: "{{ lookup('env', 'DATABASE__USER') | default('postgres', true) }}"
-      DATABASE__PASSWORD: >-
-        {{ lookup('env', 'DATABASE__PASSWORD') | default('postgres', true) }}
-      DATABASE__NAME: >-
-        {{ lookup('env', 'DATABASE__NAME') | default('topic_picker', true) }}
-      AUTH__JWT_SECRET_KEY: >-
-        {{ lookup('env', 'AUTH__JWT_SECRET_KEY') |
-        default('secret-key-change-in-production', true) }}
-      AUTH__JWT_ALGORITHM: "{{ lookup('env', 'AUTH__JWT_ALGORITHM') | default('HS256', true) }}"
-      AUTH__JWT_ACCESS_TOKEN_LIFETIME_MINUTES: >-
-        {{ lookup('env', 'AUTH__JWT_ACCESS_TOKEN_LIFETIME_MINUTES') |
-        default('15', true) }}
-      AUTH__JWT_REFRESH_TOKEN_LIFETIME_DAYS: >-
-        {{ lookup('env', 'AUTH__JWT_REFRESH_TOKEN_LIFETIME_DAYS') |
-        default('7', true) }}
-      AUTH__CONFIRMATION_TOKEN_LIFETIME_HOURS: >-
-        {{ lookup('env', 'AUTH__CONFIRMATION_TOKEN_LIFETIME_HOURS') |
-        default('24', true) }}
-      AUTH__RESET_PASSWORD_TOKEN_LIFETIME_MINUTES: >-
-        {{ lookup('env', 'AUTH__RESET_PASSWORD_TOKEN_LIFETIME_MINUTES') |
-        default('30', true) }}
-      AUTH_BOOTSTRAP__ADMIN_EMAIL: >-
-        {{ lookup('env', 'AUTH_BOOTSTRAP__ADMIN_EMAIL') |
-        default('admin@admin.com', true) }}
-      AUTH_BOOTSTRAP__ADMIN_PASSWORD: >-
-        {{ lookup('env', 'AUTH_BOOTSTRAP__ADMIN_PASSWORD') |
-        default('admin123', true) }}
-      AUTH_BOOTSTRAP__DEFAULT_USER_ROLE: >-
-        {{ lookup('env', 'AUTH_BOOTSTRAP__DEFAULT_USER_ROLE') |
-        default('public', true) }}
-      AUTH_BOOTSTRAP__ADMIN_ROLE: >-
-        {{ lookup('env', 'AUTH_BOOTSTRAP__ADMIN_ROLE') | default('admin', true) }}
-      SMTP__USERNAME: "{{ lookup('env', 'SMTP__USERNAME') | default('smtp-user', true) }}"
-      SMTP__PASSWORD: >-
-        {{ lookup('env', 'SMTP__PASSWORD') | default('smtp-password', true) }}
-      SMTP__FROM_EMAIL: >-
-        {{ lookup('env', 'SMTP__FROM_EMAIL') | default('noreply@example.com', true) }}
-      SMTP__FROM_NAME: >-
-        {{ lookup('env', 'SMTP__FROM_NAME') | default('Team 8 Project', true) }}
-      SMTP__HOST: "{{ lookup('env', 'SMTP__HOST') | default('smtp.gmail.com', true) }}"
-      SMTP__PORT: "{{ lookup('env', 'SMTP__PORT') | default('587', true) }}"
-      SMTP__STARTTLS: "{{ lookup('env', 'SMTP__STARTTLS') | default('true', true) }}"
-      SMTP__SSL_TLS: "{{ lookup('env', 'SMTP__SSL_TLS') | default('false', true) }}"
-      SMTP__USE_CREDENTIALS: >-
-        {{ lookup('env', 'SMTP__USE_CREDENTIALS') | default('true', true) }}
-      NOTIFICATIONS__FRONTEND_BASE_URL: >-
-        {{ lookup('env', 'NOTIFICATIONS__FRONTEND_BASE_URL') |
-        default('http://localhost', true) }}
-      CORS__ALLOW_ORIGINS: >-
-        {{ lookup('env', 'CORS__ALLOW_ORIGINS') |
-        default('["http://localhost:3000"]', true) }}
-      CORS__ALLOW_CREDENTIALS: >-
-        {{ lookup('env', 'CORS__ALLOW_CREDENTIALS') | default('true', true) }}
-      CORS__ALLOW_METHODS: >-
-        {{ lookup('env', 'CORS__ALLOW_METHODS') | default('["*"]', true) }}
-      CORS__ALLOW_HEADERS: >-
-        {{ lookup('env', 'CORS__ALLOW_HEADERS') | default('["*"]', true) }}
-      RATELIMIT__ENABLED: >-
-        {{ lookup('env', 'RATELIMIT__ENABLED') | default('true', true) }}
-      RATELIMIT__DEFAULT_LIMIT: >-
-        {{ lookup('env', 'RATELIMIT__DEFAULT_LIMIT') | default('100/minute', true) }}
-      RATELIMIT__AUTH_LIMIT: >-
-        {{ lookup('env', 'RATELIMIT__AUTH_LIMIT') | default('10/minute', true) }}
   tasks:
     - name: Validate deployment inputs
       ansible.builtin.assert:
@@ -87,8 +18,9 @@
           - docker_image_tag | length > 0
           - docker_user | length > 0
           - docker_token | length > 0
+          - app_env | length > 0
         fail_msg: >-
-          DOCKER_IMAGE_NAME, DOCKER_IMAGE_TAG, DOCKER_USER and DOCKER_TOKEN
+          DOCKER_IMAGE_NAME, DOCKER_IMAGE_TAG, DOCKER_USER, DOCKER_TOKEN and ENV
           must be provided in the CI environment.
 
     - name: Create application directory
@@ -114,9 +46,8 @@
         dest: "{{ app_dir }}/.env"
         mode: "0600"
         content: |
-          {% for key, value in deploy_env.items() %}
-          {{ key }}={{ value }}
-          {% endfor %}
+          {{ app_env | trim }}
+          DOCKERHUB_BACKEND_IMAGE={{ docker_image_ref }}
       no_log: true
 
     - name: Log in to Docker registry on target host
