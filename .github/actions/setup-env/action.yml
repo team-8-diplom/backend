@@ -41,7 +41,15 @@ runs:
     - name: Install Ansible
       if: inputs.install-ansible == 'true'
       shell: bash
-      run: uv pip install ansible
+      run: uv pip install ansible ansible-lint
+
+    - name: Install Ansible collections
+      if: inputs.install-ansible == 'true'
+      shell: bash
+      run: |
+        if [ -f "${{ inputs.ansible-requirements }}" ]; then
+          uv run ansible-galaxy collection install -r "${{ inputs.ansible-requirements }}"
+        fi
 
     - name: Install Ansible collections
       if: inputs.install-ansible == 'true'

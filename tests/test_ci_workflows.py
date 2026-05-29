@@ -34,6 +34,7 @@ def test_setup_action_keeps_checkout_responsibility_in_workflows():
     assert 'uv sync --frozen' in action_text
     assert 'actions/setup-python@v5' in action_text
     assert 'ansible-galaxy collection install' in action_text
+    assert 'ansible-lint' in action_text
 
 
 def test_setup_action_does_not_scan_empty_known_hosts_input():
@@ -54,6 +55,8 @@ def test_pull_request_workflow_runs_tests_and_publishes_junit_results():
 
     assert 'pull_request:' in workflow_text
     assert 'branches: [main]' in workflow_text
+    assert "install-ansible: 'true'" in workflow_text
+    assert 'uv run ansible-lint ansible' in workflow_text
     assert 'uv run pytest --junitxml=test-results.xml -v' in workflow_text
     assert 'EnricoMi/publish-unit-test-result-action@v2' in workflow_text
     assert 'files: test-results.xml' in workflow_text
@@ -68,12 +71,16 @@ def test_deploy_workflow_gates_release_and_deploy_on_tests_and_release():
     assert 'needs: test' in workflow_text
     assert 'fetch-depth: 0' in workflow_text
     assert 'new_release_git_tag' in workflow_text
+    assert 'GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}' in workflow_text
+    assert 'DOCKER_IMAGE_NAME: ${{ vars.DOCKER_IMAGE_NAME }}' in workflow_text
     assert (
-        'topic-picker-backend:${{ needs.release.outputs.new_release_git_tag }}'
+        'DOCKER_IMAGE_TAG: ${{ needs.release.outputs.new_release_git_tag }}'
         in workflow_text
     )
-    assert 'VM_HOST: ${{ secrets.VM_HOST }}' in workflow_text
-    assert 'VM_USER: ${{ secrets.VM_USER }}' in workflow_text
+    assert 'DOCKER_USER: ${{ vars.DOCKER_USER }}' in workflow_text
+    assert 'DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}' in workflow_text
+    assert 'VM_HOST: ${{ vars.VM_HOST }}' in workflow_text
+    assert 'VM_USER: ${{ vars.VM_USER }}' in workflow_text
     assert 'build-and-deploy:' in workflow_text
     assert 'needs: release' in workflow_text
     assert "needs.release.outputs.new_release_published == 'true'" in workflow_text
@@ -89,6 +96,6 @@ def test_vm_initialization_is_manual_and_default_branch_only():
         "github.ref == format('refs/heads/{0}', github.event.repository.default_branch)"
         in workflow_text
     )
-    assert 'VM_HOST: ${{ secrets.VM_HOST }}' in workflow_text
-    assert 'VM_USER: ${{ secrets.VM_USER }}' in workflow_text
+    assert 'VM_HOST: ${{ vars.VM_HOST }}' in workflow_text
+    assert 'VM_USER: ${{ vars.VM_USER }}' in workflow_text
     assert 'ansible/playbooks/init-vm.yml' in workflow_text

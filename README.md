@@ -58,27 +58,49 @@ docker compose up
 
 ## CI/CD в GitHub Actions
 
-В репозитории уже настроены workflow для GitHub Actions:
+В репозитории настроены workflow и Ansible-плейбуки для тестов, релиза и деплоя:
 
 * `.github/workflows/test.yml` — запускается на pull request в `main`, устанавливает зависимости через `uv`, выполняет `pytest` и публикует JUnit-отчёт в PR.
-* `.github/workflows/deploy.yml` — запускается на push в `main`: сначала гоняет тесты, затем создаёт тег через semantic-release, использует этот git-тег как тег Docker-образа, собирает Docker-образ через Ansible и деплоит его только если опубликован новый релиз.
-* `.github/workflows/init-vm.yml` — ручной workflow (`workflow_dispatch`) для первичной подготовки VM с помощью Ansible; запуск разрешён только из default branch.
+* `.github/workflows/deploy.yml` — запускается на push в `main`: сначала гоняет тесты, затем создаёт git-тег через semantic-release, использует этот тег как Docker tag, собирает и пушит образ плейбуком `ansible/playbooks/build-image.yml`, затем обновляет compose на VM плейбуком `ansible/playbooks/deploy.yml`.
+* `.github/workflows/init-vm.yml` — ручной workflow (`workflow_dispatch`) для первичной подготовки VM плейбуком `ansible/playbooks/init-vm.yml`; запуск разрешён только из default branch.
 
-Чтобы подключить CI/CD в GitHub:
+### Ansible-плейбуки
 
-1. Запушьте папку `.github/` в репозиторий GitHub.
+* `ansible/playbooks/init-vm.yml` — устанавливает системные утилиты, Docker Engine, Docker Buildx, Docker Compose plugin, Python Docker SDK, добавляет пользователя деплоя в группу `docker` и создаёт директорию приложения.
+* `ansible/playbooks/build-image.yml` — логинится в Docker Registry, собирает Docker-образ приложения и пушит его с тегом semantic-release.
+* `ansible/playbooks/deploy.yml` — копирует `docker-compose.yml` и `deploy/`, формирует `.env` из переменных окружения, логинится в Docker Registry на VM, подтягивает новый образ и перезапускает compose-проект.
+* `ansible/requirements.yml` — фиксирует Ansible collection `community.docker`, которую используют плейбуки.
+
+### Переменные для CI/CD
+
+Переменные деплоя следует задавать на уровне GitHub Organization / Environment / группы, чтобы репозиторий наследовал общие значения. На уровне репозитория оставьте только:
+
+| Имя | Тип | Назначение |
+| --- | --- | --- |
+| `DOCKER_IMAGE_NAME` | Variable | Имя Docker-образа без пользователя, например `topic-picker-backend`. |
+| `DOCKER_USER` | Variable | Пользователь Docker Registry / Docker Hub namespace. |
+| `DOCKER_TOKEN` | Secret | Token/password для Docker Registry. |
+| `GH_TOKEN` | Secret | Token для semantic-release с правом создавать release/tag. |
+
+Остальные значения можно хранить в наследуемых organization/environment variables или secrets:
+
+* VM/SSH: `VM_HOST`, `VM_USER`, `SSH_PRIVATE_KEY`, `SSH_KNOWN_HOSTS`.
+* Database: `DATABASE__DRIVER`, `DATABASE__HOST`, `DATABASE__PORT`, `DATABASE__USER`, `DATABASE__PASSWORD`, `DATABASE__NAME`.
+* Auth: `AUTH__JWT_SECRET_KEY`, `AUTH__JWT_ALGORITHM`, `AUTH__JWT_ACCESS_TOKEN_LIFETIME_MINUTES`, `AUTH__JWT_REFRESH_TOKEN_LIFETIME_DAYS`, `AUTH__CONFIRMATION_TOKEN_LIFETIME_HOURS`, `AUTH__RESET_PASSWORD_TOKEN_LIFETIME_MINUTES`.
+* Bootstrap: `AUTH_BOOTSTRAP__ADMIN_EMAIL`, `AUTH_BOOTSTRAP__ADMIN_PASSWORD`, `AUTH_BOOTSTRAP__DEFAULT_USER_ROLE`, `AUTH_BOOTSTRAP__ADMIN_ROLE`.
+* SMTP: `SMTP__USERNAME`, `SMTP__PASSWORD`, `SMTP__FROM_EMAIL`, `SMTP__FROM_NAME`, `SMTP__HOST`, `SMTP__PORT`, `SMTP__STARTTLS`, `SMTP__SSL_TLS`, `SMTP__USE_CREDENTIALS`.
+* App/web: `WEB_PORT`, `NOTIFICATIONS__FRONTEND_BASE_URL`, `CORS__ALLOW_ORIGINS`, `CORS__ALLOW_CREDENTIALS`, `CORS__ALLOW_METHODS`, `CORS__ALLOW_HEADERS`, `RATELIMIT__ENABLED`, `RATELIMIT__DEFAULT_LIMIT`, `RATELIMIT__AUTH_LIMIT`.
+
+Для list-переменных Pydantic указывайте JSON-строку, например `CORS__ALLOW_ORIGINS=["https://example.com"]`.
+
+### Как подключить CI/CD в GitHub
+
+1. Запушьте папку `.github/` и `ansible/` в репозиторий GitHub.
 2. Включите GitHub Actions: `Settings` → `Actions` → `General` → `Allow all actions and reusable workflows`.
 3. Настройте защиту ветки `main`: `Settings` → `Branches` → `Add branch protection rule` → включите `Require status checks to pass before merging` и выберите workflow `Tests`.
-4. Добавьте секреты в `Settings` → `Secrets and variables` → `Actions`:
-   * `DOCKER_REGISTRY` — адрес registry, например `ghcr.io/<owner>` или другой registry host.
-   * `DOCKER_USERNAME` — логин registry.
-   * `DOCKER_PASSWORD` — token/password registry.
-   * `SSH_PRIVATE_KEY` — приватный ключ для подключения Ansible к серверу.
-   * `SSH_KNOWN_HOSTS` — строка из `known_hosts` для сервера деплоя, чтобы SSH не требовал интерактивного подтверждения host key.
-   * `VM_HOST` — IP-адрес или DNS-имя VM для Ansible inventory.
-   * `VM_USER` — SSH-пользователь на VM, например `deploy`.
-5. Проверьте `ansible/inventory.yml`: host, user и путь деплоя должны соответствовать вашей VM. В текущей конфигурации host и user берутся из секретов `VM_HOST` и `VM_USER`.
+4. Настройте перечисленные выше Variables и Secrets.
+5. Проверьте `ansible/inventory.yml`: host и user берутся из `VM_HOST` и `VM_USER`.
 6. Один раз вручную запустите `Initialize VM` во вкладке `Actions`, чтобы подготовить сервер.
-7. Делайте изменения через pull request: workflow `Tests` проверит PR, а после merge/push в `main` workflow `Deploy` выполнит релиз и деплой.
+7. Делайте изменения через pull request: workflow `Tests` проверит PR, а после merge/push в `main` workflow `Deploy` выполнит релиз, сборку образа и обновление compose.
 
 Для semantic-release используйте Conventional Commits в сообщениях коммитов, например `feat: add topic filters` или `fix: correct auth refresh`.

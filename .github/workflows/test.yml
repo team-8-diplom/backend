@@ -18,6 +18,10 @@ jobs:
       - uses: ./.github/actions/setup-env
         with:
           python-version: '3.13'
+          install-ansible: 'true'
+
+      - name: Lint Ansible playbooks
+        run: uv run ansible-lint ansible
 
       - name: Run tests
         run: uv run pytest --junitxml=test-results.xml -v
