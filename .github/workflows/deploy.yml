@@ -50,6 +50,7 @@ jobs:
       VM_HOST: ${{ secrets.VM_HOST }}
       VM_USER: ${{ secrets.VM_USER }}
       ENV: ${{ secrets.ENV }}
+      DOCKER_BUILDKIT: '1'
     steps:
       - uses: actions/checkout@v4
 
