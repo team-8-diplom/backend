@@ -24,4 +24,4 @@ jobs:
           ssh-known-hosts: ${{ secrets.SSH_KNOWN_HOSTS }}
 
       - name: Run init-vm playbook
-        run: ansible-playbook ansible/playbooks/init-vm.yml -i ansible/inventory.yml
+        run: uv run ansible-playbook ansible/playbooks/init-vm.yml -i ansible/inventory.yml

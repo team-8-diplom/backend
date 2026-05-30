@@ -41,7 +41,7 @@ runs:
     - name: Install Ansible
       if: inputs.install-ansible == 'true'
       shell: bash
-      run: uv pip install ansible ansible-lint
+      run: uv pip install ansible ansible-lint docker requests
 
     - name: Install Ansible collections
       if: inputs.install-ansible == 'true'
