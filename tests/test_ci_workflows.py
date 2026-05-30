@@ -106,3 +106,16 @@ def test_vm_initialization_is_manual_and_default_branch_only():
     assert 'ssh-private-key-b64: ${{ secrets.SSH_PRIVATE_KEY_B64 }}' in workflow_text
     assert 'ssh-known-hosts: ${{ secrets.SSH_KNOWN_HOSTS }}' in workflow_text
     assert 'ansible/playbooks/init-vm.yml' in workflow_text
+
+
+
+
+def test_semantic_release_config_supports_python_backend_without_npm():
+    release_config = Path('.releaserc.json').read_text()
+
+    assert '"name": "dev"' in release_config
+    assert '"prerelease": true' in release_config
+    assert '@semantic-release/commit-analyzer' in release_config
+    assert '@semantic-release/release-notes-generator' in release_config
+    assert '@semantic-release/github' in release_config
+    assert '@semantic-release/npm' not in release_config
