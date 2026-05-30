@@ -29,11 +29,12 @@
       no_log: true
 
     - name: Build and push Docker image
+      environment:
+        DOCKER_BUILDKIT: "1" # ⬅️ Правильное место для включения BuildKit в Ansible
       community.docker.docker_image:
         name: "{{ docker_image_ref }}"
         source: build
         build:
-          path: "{{ playbook_dir }}/../../"
-          buildkit: true
+          path: "{{ playbook_dir }}/../../" # ⬅️ Убрали buildkit отсюда
         push: true
         force_source: true
