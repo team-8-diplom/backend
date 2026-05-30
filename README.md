@@ -61,7 +61,7 @@ docker compose up
 В репозитории настроены workflow и Ansible-плейбуки для тестов, релиза и деплоя:
 
 * `.github/workflows/test.yml` — запускается на pull request в `main`, устанавливает зависимости через `uv`, выполняет `pytest` и публикует JUnit-отчёт в PR.
-* `.github/workflows/deploy.yml` — запускается на push в `main`: сначала гоняет тесты, затем создаёт git-тег через semantic-release, использует этот тег как Docker tag, собирает и пушит образ плейбуком `ansible/playbooks/build-image.yml`, затем обновляет compose на VM плейбуком `ansible/playbooks/deploy.yml`.
+* `.github/workflows/deploy.yml` — запускается на push в `main` и `dev` (для проверки деплоя до merge): сначала гоняет тесты, затем создаёт git-тег через semantic-release, использует этот тег как Docker tag, собирает и пушит образ плейбуком `ansible/playbooks/build-image.yml`, затем обновляет compose на VM плейбуком `ansible/playbooks/deploy.yml`.
 * `.github/workflows/init-vm.yml` — ручной workflow (`workflow_dispatch`) для первичной подготовки VM плейбуком `ansible/playbooks/init-vm.yml`; запуск разрешён только из default branch.
 
 ### Ansible-плейбуки
@@ -70,6 +70,7 @@ docker compose up
 * `ansible/playbooks/build-image.yml` — логинится в Docker Registry, собирает Docker-образ приложения и пушит его с тегом semantic-release.
 * `ansible/playbooks/deploy.yml` — копирует `docker-compose.yml` и `deploy/`, формирует `.env` из переменных окружения, логинится в Docker Registry на VM, подтягивает новый образ и перезапускает compose-проект.
 * `ansible/requirements.yml` — фиксирует Ansible collection `community.docker`, которую используют плейбуки.
+* `release.config.cjs` — настраивает semantic-release без npm-публикации: `main` выпускает обычные релизы, `dev` — prerelease для проверки деплоя Python backend без `package.json`.
 
 ### Переменные для CI/CD
 
@@ -99,6 +100,6 @@ docker compose up
 4. Настройте перечисленные выше organization secrets.
 5. Проверьте `ansible/inventory.yml`: host и user берутся из `VM_HOST` и `VM_USER`.
 6. Один раз вручную запустите `Initialize VM` во вкладке `Actions`, чтобы подготовить сервер.
-7. Делайте изменения через pull request: workflow `Tests` проверит PR, а после merge/push в `main` workflow `Deploy` выполнит релиз, сборку образа и обновление compose.
+7. Делайте изменения через pull request: workflow `Tests` проверит PR, а после merge/push в `main` workflow `Deploy` выполнит релиз, сборку образа и обновление compose; ветка `dev` используется для предварительной проверки деплоя с prerelease-тегами semantic-release.
 
 Для semantic-release используйте Conventional Commits в сообщениях коммитов, например `feat: add topic filters` или `fix: correct auth refresh`.

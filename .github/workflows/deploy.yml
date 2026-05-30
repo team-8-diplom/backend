@@ -67,7 +67,7 @@ jobs:
           password: ${{ secrets.DOCKER_TOKEN }}
 
       - name: Run build-image playbook
-        run: ansible-playbook ansible/playbooks/build-image.yml -i ansible/inventory.yml
+        run: uv run ansible-playbook ansible/playbooks/build-image.yml -i ansible/inventory.yml
 
       - name: Run deploy playbook
-        run: ansible-playbook ansible/playbooks/deploy.yml -i ansible/inventory.yml
+        run: uv run ansible-playbook ansible/playbooks/deploy.yml -i ansible/inventory.yml

@@ -35,6 +35,7 @@ def test_setup_action_keeps_checkout_responsibility_in_workflows():
     assert 'actions/setup-python@v5' in action_text
     assert 'ansible-galaxy collection install' in action_text
     assert 'ansible-lint' in action_text
+    assert 'docker requests' in action_text
 
 
 def test_setup_action_does_not_scan_empty_known_hosts_input():
@@ -68,7 +69,7 @@ def test_deploy_workflow_gates_release_and_deploy_on_tests_and_release():
     workflow_text = (WORKFLOWS_DIR / 'deploy.yml').read_text()
 
     assert 'push:' in workflow_text
-    # assert 'branches: [main]' in workflow_text
+    assert 'branches: [main, dev]' in workflow_text
     assert 'release:' in workflow_text
     assert 'needs: test' in workflow_text
     assert 'fetch-depth: 0' in workflow_text
@@ -89,8 +90,8 @@ def test_deploy_workflow_gates_release_and_deploy_on_tests_and_release():
     assert 'build-and-deploy:' in workflow_text
     assert 'needs: release' in workflow_text
     assert "needs.release.outputs.new_release_published == 'true'" in workflow_text
-    assert 'ansible/playbooks/build-image.yml' in workflow_text
-    assert 'ansible/playbooks/deploy.yml' in workflow_text
+    assert 'uv run ansible-playbook ansible/playbooks/build-image.yml' in workflow_text
+    assert 'uv run ansible-playbook ansible/playbooks/deploy.yml' in workflow_text
 
 
 def test_vm_initialization_is_manual_and_default_branch_only():
@@ -105,4 +106,30 @@ def test_vm_initialization_is_manual_and_default_branch_only():
     assert 'VM_USER: ${{ secrets.VM_USER }}' in workflow_text
     assert 'ssh-private-key-b64: ${{ secrets.SSH_PRIVATE_KEY_B64 }}' in workflow_text
     assert 'ssh-known-hosts: ${{ secrets.SSH_KNOWN_HOSTS }}' in workflow_text
-    assert 'ansible/playbooks/init-vm.yml' in workflow_text
+    assert 'uv run ansible-playbook ansible/playbooks/init-vm.yml' in workflow_text
+
+
+def test_semantic_release_config_supports_python_backend_without_npm():
+    release_config_path = Path('release.config.cjs')
+    release_config_bytes = release_config_path.read_bytes()
+    release_config_text = release_config_bytes.decode('utf-8')
+
+    assert not release_config_bytes.startswith(b'\xef\xbb\xbf')
+    assert not Path('.releaserc.json').exists()
+    assert 'module.exports = {' in release_config_text
+    assert "'main'" in release_config_text
+    assert "name: 'dev'" in release_config_text
+    assert 'prerelease: true' in release_config_text
+    assert '@semantic-release/commit-analyzer' in release_config_text
+    assert '@semantic-release/release-notes-generator' in release_config_text
+    assert '@semantic-release/github' in release_config_text
+    assert '@semantic-release/npm' not in release_config_text
+
+
+def test_build_image_playbook_uses_current_ansible_python():
+    playbook_text = Path('ansible/playbooks/build-image.yml').read_text()
+
+    assert (
+        'ansible_python_interpreter: "{{ ansible_playbook_python }}"'
+        in playbook_text
+    )
