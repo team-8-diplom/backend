@@ -44,7 +44,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       DOCKER_IMAGE_NAME: ${{ secrets.DOCKER_IMAGE_NAME }}
-      DOCKER_IMAGE_TAG: ${{ needs.release.outputs.new_release_git_tag }}
+      DOCKER_IMAGE_TAG: ${{ needs.release.outputs.new_release_git_tag || github.sha }}
       DOCKER_USER: ${{ secrets.DOCKER_USER }}
       DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
       VM_HOST: ${{ secrets.VM_HOST }}
