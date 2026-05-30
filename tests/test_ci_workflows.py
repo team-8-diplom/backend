@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 WORKFLOWS_DIR = Path('.github/workflows')
@@ -108,14 +109,20 @@ def test_vm_initialization_is_manual_and_default_branch_only():
     assert 'ansible/playbooks/init-vm.yml' in workflow_text
 
 
-
-
 def test_semantic_release_config_supports_python_backend_without_npm():
-    release_config = Path('.releaserc.json').read_text()
+    release_config_path = Path('.releaserc.json')
+    release_config_bytes = release_config_path.read_bytes()
 
-    assert '"name": "dev"' in release_config
-    assert '"prerelease": true' in release_config
-    assert '@semantic-release/commit-analyzer' in release_config
-    assert '@semantic-release/release-notes-generator' in release_config
-    assert '@semantic-release/github' in release_config
-    assert '@semantic-release/npm' not in release_config
+    assert not release_config_bytes.startswith(b'\xef\xbb\xbf')
+
+    release_config = json.loads(release_config_bytes.decode('utf-8'))
+    release_plugins = release_config['plugins']
+
+    assert release_config['branches'] == [
+        'main',
+        {'name': 'dev', 'prerelease': True},
+    ]
+    assert '@semantic-release/commit-analyzer' in release_plugins
+    assert '@semantic-release/release-notes-generator' in release_plugins
+    assert '@semantic-release/github' in release_plugins
+    assert '@semantic-release/npm' not in release_plugins
