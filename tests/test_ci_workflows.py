@@ -110,19 +110,17 @@ def test_vm_initialization_is_manual_and_default_branch_only():
 
 
 def test_semantic_release_config_supports_python_backend_without_npm():
-    release_config_path = Path('.releaserc.json')
+    release_config_path = Path('release.config.cjs')
     release_config_bytes = release_config_path.read_bytes()
+    release_config_text = release_config_bytes.decode('utf-8')
 
     assert not release_config_bytes.startswith(b'\xef\xbb\xbf')
-
-    release_config = json.loads(release_config_bytes.decode('utf-8'))
-    release_plugins = release_config['plugins']
-
-    assert release_config['branches'] == [
-        'main',
-        {'name': 'dev', 'prerelease': True},
-    ]
-    assert '@semantic-release/commit-analyzer' in release_plugins
-    assert '@semantic-release/release-notes-generator' in release_plugins
-    assert '@semantic-release/github' in release_plugins
-    assert '@semantic-release/npm' not in release_plugins
+    assert not Path('.releaserc.json').exists()
+    assert 'module.exports = {' in release_config_text
+    assert "'main'" in release_config_text
+    assert "name: 'dev'" in release_config_text
+    assert 'prerelease: true' in release_config_text
+    assert '@semantic-release/commit-analyzer' in release_config_text
+    assert '@semantic-release/release-notes-generator' in release_config_text
+    assert '@semantic-release/github' in release_config_text
+    assert '@semantic-release/npm' not in release_config_text
