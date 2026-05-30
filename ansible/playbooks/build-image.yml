@@ -34,5 +34,6 @@
         source: build
         build:
           path: "{{ playbook_dir }}/../../"
+          buildkit: true
         push: true
         force_source: true
