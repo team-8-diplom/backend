@@ -35,7 +35,8 @@ class RefreshSession(Base, RefreshSessionBase, table=True):
 
     __tablename__ = 'refresh_sessions'
 
-    # Дополнительно можно добавить метод проверки истечения токена
+    # метод проверки истечения токена
     @property
     def is_expired(self) -> bool:
-        return datetime.now(timezone.utc) >= self.expires_at
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        return now >= self.expires_at

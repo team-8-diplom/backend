@@ -1,0 +1,42 @@
+---
+- name: Build and push Docker image
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+    docker_image_name: "{{ lookup('env', 'DOCKER_IMAGE_NAME') }}"
+    docker_image_tag: "{{ lookup('env', 'DOCKER_IMAGE_TAG') }}"
+    docker_user: "{{ lookup('env', 'DOCKER_USER') }}"
+    docker_token: "{{ lookup('env', 'DOCKER_TOKEN') }}"
+    docker_image_repository: >-
+      {{ docker_image_name if '/' in docker_image_name else docker_user ~ '/' ~ docker_image_name }}
+    docker_image_ref: "{{ docker_image_repository }}:{{ docker_image_tag }}"
+  tasks:
+    - name: Validate Docker image inputs
+      ansible.builtin.assert:
+        that:
+          - docker_image_name | length > 0
+          - docker_image_tag | length > 0
+          - docker_user | length > 0
+          - docker_token | length > 0
+        fail_msg: >-
+          DOCKER_IMAGE_NAME, DOCKER_IMAGE_TAG, DOCKER_USER and DOCKER_TOKEN
+          must be provided in the CI environment.
+
+    - name: Log in to Docker registry
+      community.docker.docker_login:
+        username: "{{ docker_user }}"
+        password: "{{ docker_token }}"
+      no_log: true
+
+    - name: Build and push Docker image
+      environment:
+        DOCKER_BUILDKIT: "1"
+      community.docker.docker_image:
+        name: "{{ docker_image_ref }}"
+        source: build
+        build:
+          path: "{{ playbook_dir }}/../../" #
+        push: true
+        force_source: true
