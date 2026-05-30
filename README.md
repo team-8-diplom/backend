@@ -61,7 +61,7 @@ docker compose up
 В репозитории настроены workflow и Ansible-плейбуки для тестов, релиза и деплоя:
 
 * `.github/workflows/test.yml` — запускается на pull request в `main`, устанавливает зависимости через `uv`, выполняет `pytest` и публикует JUnit-отчёт в PR.
-* `.github/workflows/deploy.yml` — запускается на push в `main`: сначала гоняет тесты, затем создаёт git-тег через semantic-release, использует этот тег как Docker tag, собирает и пушит образ плейбуком `ansible/playbooks/build-image.yml`, затем обновляет compose на VM плейбуком `ansible/playbooks/deploy.yml`.
+* `.github/workflows/deploy.yml` — запускается на push в `main` и `dev` (для проверки деплоя до merge): сначала гоняет тесты, затем создаёт git-тег через semantic-release, использует этот тег как Docker tag, собирает и пушит образ плейбуком `ansible/playbooks/build-image.yml`, затем обновляет compose на VM плейбуком `ansible/playbooks/deploy.yml`.
 * `.github/workflows/init-vm.yml` — ручной workflow (`workflow_dispatch`) для первичной подготовки VM плейбуком `ansible/playbooks/init-vm.yml`; запуск разрешён только из default branch.
 
 ### Ansible-плейбуки
@@ -70,37 +70,36 @@ docker compose up
 * `ansible/playbooks/build-image.yml` — логинится в Docker Registry, собирает Docker-образ приложения и пушит его с тегом semantic-release.
 * `ansible/playbooks/deploy.yml` — копирует `docker-compose.yml` и `deploy/`, формирует `.env` из переменных окружения, логинится в Docker Registry на VM, подтягивает новый образ и перезапускает compose-проект.
 * `ansible/requirements.yml` — фиксирует Ansible collection `community.docker`, которую используют плейбуки.
+* `release.config.cjs` — настраивает semantic-release без npm-публикации: `main` выпускает обычные релизы, `dev` — prerelease для проверки деплоя Python backend без `package.json`.
 
 ### Переменные для CI/CD
 
-Переменные деплоя следует задавать на уровне GitHub Organization / Environment / группы, чтобы репозиторий наследовал общие значения. На уровне репозитория оставьте только:
+Переменные деплоя задаются на уровне GitHub Organization Secrets, чтобы репозиторий наследовал общие значения:
 
 | Имя | Тип | Назначение |
 | --- | --- | --- |
-| `DOCKER_IMAGE_NAME` | Variable | Имя Docker-образа без пользователя, например `topic-picker-backend`. |
-| `DOCKER_USER` | Variable | Пользователь Docker Registry / Docker Hub namespace. |
+| `DOCKER_IMAGE_NAME` | Secret | Имя Docker-образа без пользователя, например `topic-picker-backend`. |
+| `DOCKER_USER` | Secret | Пользователь Docker Registry / Docker Hub namespace. |
 | `DOCKER_TOKEN` | Secret | Token/password для Docker Registry. |
 | `GH_TOKEN` | Secret | Token для semantic-release с правом создавать release/tag. |
+| `VM_HOST` | Secret | Host VM для Ansible inventory. |
+| `VM_USER` | Secret | Пользователь VM для Ansible inventory. |
+| `SSH_PRIVATE_KEY_B64` | Secret | Приватный SSH-ключ для Ansible, закодированный в base64. |
+| `SSH_KNOWN_HOSTS` | Secret | Записи `known_hosts` для целевой VM. |
+| `ENV` | Secret | Полное содержимое runtime `.env` для приложения без `DOCKERHUB_BACKEND_IMAGE`. |
 
-Остальные значения можно хранить в наследуемых organization/environment variables или secrets:
+Секрет `ENV` хранит значения приложения в формате `.env`: database, auth, bootstrap, SMTP, CORS, rate limit и другие runtime-настройки. `DOCKERHUB_BACKEND_IMAGE` добавляется деплоем автоматически из опубликованного Docker-образа.
 
-* VM/SSH: `VM_HOST`, `VM_USER`, `SSH_PRIVATE_KEY`, `SSH_KNOWN_HOSTS`.
-* Database: `DATABASE__DRIVER`, `DATABASE__HOST`, `DATABASE__PORT`, `DATABASE__USER`, `DATABASE__PASSWORD`, `DATABASE__NAME`.
-* Auth: `AUTH__JWT_SECRET_KEY`, `AUTH__JWT_ALGORITHM`, `AUTH__JWT_ACCESS_TOKEN_LIFETIME_MINUTES`, `AUTH__JWT_REFRESH_TOKEN_LIFETIME_DAYS`, `AUTH__CONFIRMATION_TOKEN_LIFETIME_HOURS`, `AUTH__RESET_PASSWORD_TOKEN_LIFETIME_MINUTES`.
-* Bootstrap: `AUTH_BOOTSTRAP__ADMIN_EMAIL`, `AUTH_BOOTSTRAP__ADMIN_PASSWORD`, `AUTH_BOOTSTRAP__DEFAULT_USER_ROLE`, `AUTH_BOOTSTRAP__ADMIN_ROLE`.
-* SMTP: `SMTP__USERNAME`, `SMTP__PASSWORD`, `SMTP__FROM_EMAIL`, `SMTP__FROM_NAME`, `SMTP__HOST`, `SMTP__PORT`, `SMTP__STARTTLS`, `SMTP__SSL_TLS`, `SMTP__USE_CREDENTIALS`.
-* App/web: `WEB_PORT`, `NOTIFICATIONS__FRONTEND_BASE_URL`, `CORS__ALLOW_ORIGINS`, `CORS__ALLOW_CREDENTIALS`, `CORS__ALLOW_METHODS`, `CORS__ALLOW_HEADERS`, `RATELIMIT__ENABLED`, `RATELIMIT__DEFAULT_LIMIT`, `RATELIMIT__AUTH_LIMIT`.
-
-Для list-переменных Pydantic указывайте JSON-строку, например `CORS__ALLOW_ORIGINS=["https://example.com"]`.
+Для list-переменных Pydantic внутри `ENV` указывайте JSON-строку, например `CORS__ALLOW_ORIGINS=["https://example.com"]`.
 
 ### Как подключить CI/CD в GitHub
 
 1. Запушьте папку `.github/` и `ansible/` в репозиторий GitHub.
 2. Включите GitHub Actions: `Settings` → `Actions` → `General` → `Allow all actions and reusable workflows`.
 3. Настройте защиту ветки `main`: `Settings` → `Branches` → `Add branch protection rule` → включите `Require status checks to pass before merging` и выберите workflow `Tests`.
-4. Настройте перечисленные выше Variables и Secrets.
+4. Настройте перечисленные выше organization secrets.
 5. Проверьте `ansible/inventory.yml`: host и user берутся из `VM_HOST` и `VM_USER`.
 6. Один раз вручную запустите `Initialize VM` во вкладке `Actions`, чтобы подготовить сервер.
-7. Делайте изменения через pull request: workflow `Tests` проверит PR, а после merge/push в `main` workflow `Deploy` выполнит релиз, сборку образа и обновление compose.
+7. Делайте изменения через pull request: workflow `Tests` проверит PR, а после merge/push в `main` workflow `Deploy` выполнит релиз, сборку образа и обновление compose; ветка `dev` используется для предварительной проверки деплоя с prerelease-тегами semantic-release.
 
 Для semantic-release используйте Conventional Commits в сообщениях коммитов, например `feat: add topic filters` или `fix: correct auth refresh`.

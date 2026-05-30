@@ -10,8 +10,8 @@ inputs:
     description: Whether to install Ansible and configure SSH
     required: false
     default: 'false'
-  ssh-private-key:
-    description: SSH private key for Ansible (required when install-ansible is true)
+  ssh-private-key-b64:
+    description: Base64-encoded SSH private key for Ansible (required when install-ansible is true)
     required: false
     default: ''
   ssh-known-hosts:
@@ -41,7 +41,7 @@ runs:
     - name: Install Ansible
       if: inputs.install-ansible == 'true'
       shell: bash
-      run: uv pip install ansible ansible-lint
+      run: uv pip install ansible ansible-lint docker requests
 
     - name: Install Ansible collections
       if: inputs.install-ansible == 'true'
@@ -60,12 +60,12 @@ runs:
         fi
 
     - name: Configure SSH
-      if: inputs.install-ansible == 'true' && inputs.ssh-private-key != ''
+      if: inputs.install-ansible == 'true' && inputs.ssh-private-key-b64 != ''
       shell: bash
       run: |
         mkdir -p ~/.ssh
-        echo "${{ inputs.ssh-private-key }}" > ~/.ssh/id_rsa
+        printf '%s' "${{ inputs.ssh-private-key-b64 }}" | base64 --decode > ~/.ssh/id_rsa
         chmod 600 ~/.ssh/id_rsa
         if [ -n "${{ inputs.ssh-known-hosts }}" ]; then
-          echo "${{ inputs.ssh-known-hosts }}" >> ~/.ssh/known_hosts
+          printf '%s\n' "${{ inputs.ssh-known-hosts }}" >> ~/.ssh/known_hosts
         fi

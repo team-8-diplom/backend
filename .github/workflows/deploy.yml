@@ -2,7 +2,7 @@ name: Deploy
 
 on:
   push:
-    branches: [main]
+    branches: [main, dev]
 
 permissions:
   contents: write
@@ -43,46 +43,13 @@ jobs:
     if: needs.release.outputs.new_release_published == 'true'
     runs-on: ubuntu-latest
     env:
-      DOCKER_IMAGE_NAME: ${{ vars.DOCKER_IMAGE_NAME }}
+      DOCKER_IMAGE_NAME: ${{ secrets.DOCKER_IMAGE_NAME }}
       DOCKER_IMAGE_TAG: ${{ needs.release.outputs.new_release_git_tag }}
-      DOCKER_USER: ${{ vars.DOCKER_USER }}
+      DOCKER_USER: ${{ secrets.DOCKER_USER }}
       DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
-      VM_HOST: ${{ vars.VM_HOST }}
-      VM_USER: ${{ vars.VM_USER }}
-      WEB_PORT: ${{ vars.WEB_PORT }}
-      DATABASE__DRIVER: ${{ vars.DATABASE__DRIVER }}
-      DATABASE__HOST: ${{ vars.DATABASE__HOST }}
-      DATABASE__PORT: ${{ vars.DATABASE__PORT }}
-      DATABASE__USER: ${{ vars.DATABASE__USER }}
-      DATABASE__PASSWORD: ${{ secrets.DATABASE__PASSWORD }}
-      DATABASE__NAME: ${{ vars.DATABASE__NAME }}
-      AUTH__JWT_SECRET_KEY: ${{ secrets.AUTH__JWT_SECRET_KEY }}
-      AUTH__JWT_ALGORITHM: ${{ vars.AUTH__JWT_ALGORITHM }}
-      AUTH__JWT_ACCESS_TOKEN_LIFETIME_MINUTES: ${{ vars.AUTH__JWT_ACCESS_TOKEN_LIFETIME_MINUTES }}
-      AUTH__JWT_REFRESH_TOKEN_LIFETIME_DAYS: ${{ vars.AUTH__JWT_REFRESH_TOKEN_LIFETIME_DAYS }}
-      AUTH__CONFIRMATION_TOKEN_LIFETIME_HOURS: ${{ vars.AUTH__CONFIRMATION_TOKEN_LIFETIME_HOURS }}
-      AUTH__RESET_PASSWORD_TOKEN_LIFETIME_MINUTES: ${{ vars.AUTH__RESET_PASSWORD_TOKEN_LIFETIME_MINUTES }}
-      AUTH_BOOTSTRAP__ADMIN_EMAIL: ${{ vars.AUTH_BOOTSTRAP__ADMIN_EMAIL }}
-      AUTH_BOOTSTRAP__ADMIN_PASSWORD: ${{ secrets.AUTH_BOOTSTRAP__ADMIN_PASSWORD }}
-      AUTH_BOOTSTRAP__DEFAULT_USER_ROLE: ${{ vars.AUTH_BOOTSTRAP__DEFAULT_USER_ROLE }}
-      AUTH_BOOTSTRAP__ADMIN_ROLE: ${{ vars.AUTH_BOOTSTRAP__ADMIN_ROLE }}
-      SMTP__USERNAME: ${{ vars.SMTP__USERNAME }}
-      SMTP__PASSWORD: ${{ secrets.SMTP__PASSWORD }}
-      SMTP__FROM_EMAIL: ${{ vars.SMTP__FROM_EMAIL }}
-      SMTP__FROM_NAME: ${{ vars.SMTP__FROM_NAME }}
-      SMTP__HOST: ${{ vars.SMTP__HOST }}
-      SMTP__PORT: ${{ vars.SMTP__PORT }}
-      SMTP__STARTTLS: ${{ vars.SMTP__STARTTLS }}
-      SMTP__SSL_TLS: ${{ vars.SMTP__SSL_TLS }}
-      SMTP__USE_CREDENTIALS: ${{ vars.SMTP__USE_CREDENTIALS }}
-      NOTIFICATIONS__FRONTEND_BASE_URL: ${{ vars.NOTIFICATIONS__FRONTEND_BASE_URL }}
-      CORS__ALLOW_ORIGINS: ${{ vars.CORS__ALLOW_ORIGINS }}
-      CORS__ALLOW_CREDENTIALS: ${{ vars.CORS__ALLOW_CREDENTIALS }}
-      CORS__ALLOW_METHODS: ${{ vars.CORS__ALLOW_METHODS }}
-      CORS__ALLOW_HEADERS: ${{ vars.CORS__ALLOW_HEADERS }}
-      RATELIMIT__ENABLED: ${{ vars.RATELIMIT__ENABLED }}
-      RATELIMIT__DEFAULT_LIMIT: ${{ vars.RATELIMIT__DEFAULT_LIMIT }}
-      RATELIMIT__AUTH_LIMIT: ${{ vars.RATELIMIT__AUTH_LIMIT }}
+      VM_HOST: ${{ secrets.VM_HOST }}
+      VM_USER: ${{ secrets.VM_USER }}
+      ENV: ${{ secrets.ENV }}
     steps:
       - uses: actions/checkout@v4
 
@@ -90,17 +57,17 @@ jobs:
         with:
           python-version: '3.13'
           install-ansible: 'true'
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-          ssh-known-hosts: ${{ vars.SSH_KNOWN_HOSTS }}
+          ssh-private-key-b64: ${{ secrets.SSH_PRIVATE_KEY_B64 }}
+          ssh-known-hosts: ${{ secrets.SSH_KNOWN_HOSTS }}
 
       - name: Login to Docker Registry
         uses: docker/login-action@v3
         with:
-          username: ${{ vars.DOCKER_USER }}
+          username: ${{ secrets.DOCKER_USER }}
           password: ${{ secrets.DOCKER_TOKEN }}
 
       - name: Run build-image playbook
-        run: ansible-playbook ansible/playbooks/build-image.yml -i ansible/inventory.yml
+        run: uv run ansible-playbook ansible/playbooks/build-image.yml -i ansible/inventory.yml
 
       - name: Run deploy playbook
-        run: ansible-playbook ansible/playbooks/deploy.yml -i ansible/inventory.yml
+        run: uv run ansible-playbook ansible/playbooks/deploy.yml -i ansible/inventory.yml
