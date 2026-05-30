@@ -78,9 +78,9 @@ docker compose up
 
 | Имя | Тип | Назначение |
 | --- | --- | --- |
-| `DOCKER_IMAGE_NAME` | Secret | Имя Docker-образа без пользователя, например `topic-picker-backend`. |
-| `DOCKER_USER` | Secret | Пользователь Docker Registry / Docker Hub namespace. |
-| `DOCKER_TOKEN` | Secret | Token/password для Docker Registry. |
+| `DOCKER_IMAGE_NAME` | Secret | Имя Docker-образа. Можно указать только repository name, например `topic-picker-backend`, тогда будет использован `DOCKER_USER/topic-picker-backend`, или полный repository path, например `my-org/topic-picker-backend`. |
+| `DOCKER_USER` | Secret | Пользователь Docker Registry / Docker Hub для логина. |
+| `DOCKER_TOKEN` | Secret | Token/password для Docker Registry с правом push/pull к repository path из `DOCKER_IMAGE_NAME`. |
 | `GH_TOKEN` | Secret | Token для semantic-release с правом создавать release/tag. |
 | `VM_HOST` | Secret | Host VM для Ansible inventory. |
 | `VM_USER` | Secret | Пользователь VM для Ansible inventory. |

@@ -9,7 +9,9 @@
     docker_user: "{{ lookup('env', 'DOCKER_USER') }}"
     docker_token: "{{ lookup('env', 'DOCKER_TOKEN') }}"
     app_env: "{{ lookup('env', 'ENV') }}"
-    docker_image_ref: "{{ docker_user }}/{{ docker_image_name }}:{{ docker_image_tag }}"
+    docker_image_repository: >-
+      {{ docker_image_name if '/' in docker_image_name else docker_user ~ '/' ~ docker_image_name }}
+    docker_image_ref: "{{ docker_image_repository }}:{{ docker_image_tag }}"
   tasks:
     - name: Validate deployment inputs
       ansible.builtin.assert:
