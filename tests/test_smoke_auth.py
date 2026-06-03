@@ -7,7 +7,13 @@ async def test_register_login_me_refresh_logout(client: AsyncClient):
     # Register
     resp = await client.post(
         '/api/v1/auth/register',
-        json={'email': 'smoke@example.com', 'password': 'StrongPass123'},
+        json={
+            'first_name': 'Smoke',
+            'last_name': 'Test',
+            'email': 'smoke@example.com',
+            'password': 'StrongPass123',
+            'role': 'student',
+        },
     )
     assert resp.status_code == HTTPStatus.CREATED
     assert resp.json()['email'] == 'smoke@example.com'
@@ -44,13 +50,25 @@ async def test_register_login_me_refresh_logout(client: AsyncClient):
 async def test_register_duplicate_email(client: AsyncClient):
     resp = await client.post(
         '/api/v1/auth/register',
-        json={'email': 'dup@example.com', 'password': 'Pass12345'},
+        json={
+            'first_name': 'Dup',
+            'last_name': 'User',
+            'email': 'dup@example.com',
+            'password': 'Pass12345',
+            'role': 'student',
+        },
     )
     assert resp.status_code == HTTPStatus.CREATED
 
     resp = await client.post(
         '/api/v1/auth/register',
-        json={'email': 'dup@example.com', 'password': 'Other12345'},
+        json={
+            'first_name': 'Dup',
+            'last_name': 'User',
+            'email': 'dup@example.com',
+            'password': 'Other12345',
+            'role': 'student',
+        },
     )
     assert resp.status_code == HTTPStatus.BAD_REQUEST
 
@@ -58,7 +76,13 @@ async def test_register_duplicate_email(client: AsyncClient):
 async def test_login_wrong_password(client: AsyncClient):
     resp = await client.post(
         '/api/v1/auth/register',
-        json={'email': 'wrong@example.com', 'password': 'CorrectPass'},
+        json={
+            'first_name': 'Wrong',
+            'last_name': 'Pass',
+            'email': 'wrong@example.com',
+            'password': 'CorrectPass',
+            'role': 'student',
+        },
     )
     assert resp.status_code == HTTPStatus.CREATED
 

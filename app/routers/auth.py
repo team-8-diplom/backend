@@ -19,12 +19,13 @@ from app.dependencies.services import (
     RoleServiceDep,
     UserServiceDep,
 )
-from app.models import AccessTokenResponse, MessageResponse, UserCreate, UserPublic
+from app.models import AccessTokenResponse, MessageResponse, UserPublic
 from app.models.auth import (
     ConfirmAccountRequest,
     LoginRequest,
     PasswordChangeRequest,
     PasswordResetRequest,
+    RegisterRequest,
 )
 
 router = APIRouter(prefix='/auth', tags=['Authentication'])
@@ -34,7 +35,7 @@ router = APIRouter(prefix='/auth', tags=['Authentication'])
     '/register', response_model=UserPublic, status_code=status.HTTP_201_CREATED
 )
 async def register(
-    user_data: UserCreate,
+    user_data: RegisterRequest,
     background_tasks: BackgroundTasks,
     service: AuthServiceDep,
     user_service: UserServiceDep,
@@ -48,6 +49,9 @@ async def register(
     )
     if public_role:
         await role_service.assign_role_to_user(created_user.id, public_role.id)
+    requested_role = await role_service.get_by_name(user_data.role)
+    if requested_role and (not public_role or requested_role.id != public_role.id):
+        await role_service.assign_role_to_user(created_user.id, requested_role.id)
     return UserPublic.model_validate(created_user)
 
 

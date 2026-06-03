@@ -5,7 +5,7 @@ from app.models.applications import (
     ApplicationStatus,
     ApplicationUpdate,
 )
-from app.models.auth import AccessTokenResponse, MessageResponse
+from app.models.auth import AccessTokenResponse, MessageResponse, RegisterRequest
 from app.models.departments import (
     Department,
     DepartmentCreate,
@@ -30,7 +30,15 @@ from app.models.topic_skill import (
     TopicSkillPublic,
     TopicSkillUpdate,
 )
-from app.models.topics import Topic, TopicCreate, TopicPublic, TopicStatus, TopicUpdate
+from app.models.topics import (
+    TeacherInTopic,
+    Topic,
+    TopicCreate,
+    TopicDetailPublic,
+    TopicPublic,
+    TopicStatus,
+    TopicUpdate,
+)
 from app.models.user_skills import (
     UserSkill,
     UserSkillCreate,
@@ -42,6 +50,7 @@ from app.models.users import User, UserCreate, UserPublic, UserUpdate
 __all__ = [
     'AccessTokenResponse',
     'MessageResponse',
+    'RegisterRequest',
     # Users
     'User',
     'UserCreate',
@@ -76,6 +85,8 @@ __all__ = [
     'TopicCreate',
     'TopicUpdate',
     'TopicPublic',
+    'TopicDetailPublic',
+    'TeacherInTopic',
     'TopicStatus',
     # Skills
     'Skill',

@@ -8,7 +8,6 @@ from app.models.user_skills import UserSkill, UserSkillCreate, UserSkillUpdate
 
 class UserSkillService:
     def __init__(self, session: SessionDep):
-        # Передаем модель Student в репозиторий
         self.__repository = Repository(session=session, model=UserSkill)
 
     async def get(self, user_skill_id: UUID) -> Optional[UserSkill]:
@@ -28,3 +27,6 @@ class UserSkillService:
 
     async def delete(self, user_skill_id: UUID) -> Optional[UserSkill]:
         return await self.__repository.delete(user_skill_id)
+
+    async def delete_by_user(self, user_id: UUID) -> None:
+        await self.__repository.delete_by_field('user_id', user_id)

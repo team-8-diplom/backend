@@ -1,10 +1,11 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Query, Security, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Security, status
 
-from app.dependencies.rbac import require_permission
-from app.dependencies.services import UserServiceDep
+from app.dependencies.rbac import get_current_user, require_permission
+from app.dependencies.services import UserServiceDep, UserSkillServiceDep
+from app.models import User
 from app.models.pagination import Page
 from app.models.users import UserCreate, UserPublic, UserUpdate
 
@@ -67,6 +68,18 @@ async def update_user(user_id: UUID, user: UserUpdate, service: UserServiceDep):
             status_code=status.HTTP_404_NOT_FOUND, detail='User not found'
         )
     return UserPublic.model_validate(updated)
+
+
+@router.delete(
+    '/me/skills',
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Security(require_permission, scopes=['user_skills:delete'])],
+)
+async def delete_my_skills(
+    skill_service: UserSkillServiceDep,
+    current_user: Annotated[User, Depends(get_current_user)],
+):
+    await skill_service.delete_by_user(current_user.id)
 
 
 @router.delete(
