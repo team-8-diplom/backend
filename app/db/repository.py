@@ -102,6 +102,20 @@ class Repository(Generic[T]):
         await self.session.refresh(item)
         return item
 
+    async def fetch_where_in(self, field: str, values: list) -> List[T]:
+        if not values:
+            return []
+        column = getattr(self.model, field)
+        stmt = select(self.model).where(column.in_(values))
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
+
+    async def delete_by_field(self, field: str, value: Any) -> None:
+        column = getattr(self.model, field)
+        stmt = delete(self.model).where(column == value)
+        await self.session.execute(stmt)
+        await self.session.commit()
+
     async def fetch_page(self, limit: int = 20, offset: int = 0):
         stmt = select(self.model).limit(limit).offset(offset)
         count_stmt = select(func.count()).select_from(self.model)

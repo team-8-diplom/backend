@@ -14,11 +14,15 @@ if TYPE_CHECKING:
 
 class UserBase(SQLModel):
     email: EmailStr = Field(index=True, unique=True, max_length=255)
+    first_name: Optional[str] = Field(default=None, max_length=100)
+    last_name: Optional[str] = Field(default=None, max_length=100)
 
 
 class UserCreate(SQLModel):
     email: EmailStr
     password: str
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
 
 
 class UserUpdate(SQLModel):

@@ -41,6 +41,22 @@ class TopicPublic(TopicBase, Base):
     status: TopicStatus
 
 
+class TeacherInTopic(SQLModel):
+    id: UUID
+    name: str
+    email: str
+
+
+class TopicDetailPublic(SQLModel):
+    id: UUID
+    title: str
+    description: str
+    status: TopicStatus
+    institute: Optional[str] = None
+    teacher: Optional[TeacherInTopic] = None
+    skills: list[str] = []
+
+
 class Topic(TopicBase, Base, table=True):
     __tablename__ = 'topics'
 

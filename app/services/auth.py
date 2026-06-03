@@ -13,6 +13,7 @@ from app.core.tokens import (
     get_user_id_from_token,
 )
 from app.models import User, UserCreate
+from app.models.auth import RegisterRequest
 from app.models.auth import TokenPairResponse
 from app.models.email_notifications import EmailNotificationCreate
 from app.models.refresh_sessions import RefreshSessionCreate
@@ -24,14 +25,20 @@ from app.services.refresh_sessions import RefreshSessionService
 
 
 class AuthService:
-    async def register(self, user_data: UserCreate, user_service) -> User:
+    async def register(self, user_data: RegisterRequest, user_service) -> User:
         existing_user = await user_service.get_by_email(user_data.email)
         if existing_user:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail='Email already registered',
             )
-        return await user_service.create(user_data)
+        create_data = UserCreate(
+            email=user_data.email,
+            password=user_data.password,
+            first_name=user_data.first_name,
+            last_name=user_data.last_name,
+        )
+        return await user_service.create(create_data)
 
     async def _issue_token_pair(
         self, user_id: UUID, refresh_session_service: RefreshSessionService

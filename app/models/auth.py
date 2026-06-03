@@ -1,4 +1,14 @@
-from pydantic import BaseModel
+from typing import Literal, Optional
+
+from pydantic import BaseModel, EmailStr
+
+
+class RegisterRequest(BaseModel):
+    first_name: str
+    last_name: str
+    email: EmailStr
+    password: str
+    role: Literal['student', 'teacher'] = 'student'
 
 
 class AccessTokenResponse(BaseModel):

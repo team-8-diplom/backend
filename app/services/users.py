@@ -35,6 +35,8 @@ class UserService:
         user_data = {
             'email': self._normalize_email(data.email),
             'password_hash': hash_password(data.password),
+            'first_name': getattr(data, 'first_name', None),
+            'last_name': getattr(data, 'last_name', None),
         }
         user = self._repository.model(**user_data)
         try:

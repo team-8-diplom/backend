@@ -8,7 +8,6 @@ from app.models.topic_skill import TopicSkill, TopicSkillCreate, TopicSkillUpdat
 
 class TopicSkillService:
     def __init__(self, session: SessionDep):
-        # Передаем модель Student в репозиторий
         self.__repository = Repository(session=session, model=TopicSkill)
 
     async def get_all(self):
@@ -28,3 +27,6 @@ class TopicSkillService:
 
     async def delete(self, topic_skill_id: UUID) -> Optional[TopicSkill]:
         return await self.__repository.delete(topic_skill_id)
+
+    async def delete_by_topic(self, topic_id: UUID) -> None:
+        await self.__repository.delete_by_field('topic_id', topic_id)
