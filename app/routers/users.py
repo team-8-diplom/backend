@@ -108,6 +108,18 @@ async def delete_my_skill(
 
 
 @router.delete(
+    '/me/skills',
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Security(require_permission, scopes=['user_skills:delete'])],
+)
+async def delete_my_skills(
+    skill_service: UserSkillServiceDep,
+    current_user: Annotated[User, Depends(get_current_user)],
+):
+    await skill_service.delete_by_user(current_user.id)
+
+
+@router.delete(
     '/{user_id}',
     status_code=status.HTTP_204_NO_CONTENT,
     dependencies=[Security(require_permission, scopes=['users:delete'])],
