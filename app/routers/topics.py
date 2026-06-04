@@ -5,6 +5,7 @@ from fastapi import APIRouter, HTTPException, Security, status
 
 from app.dependencies.rbac import require_permission
 from app.dependencies.services import TopicServiceDep, TopicSkillServiceDep
+from app.models.topic_skill import TopicSkillPublic, TopicSkillUpdate
 from app.models.topics import TopicCreate, TopicDetailPublic, TopicPublic, TopicUpdate
 
 router = APIRouter(prefix='/topics', tags=['Topics'])
@@ -74,10 +75,32 @@ async def delete_topic(topic_id: UUID, service: TopicServiceDep):
         )
 
 
+@router.patch(
+    '/{topic_id}/skills/{skill_id}',
+    response_model=TopicSkillPublic,
+    dependencies=[Security(require_permission, scopes=['topic_skills:update'])],
+)
+async def update_topic_skill(
+    topic_id: UUID, skill_id: UUID, data: TopicSkillUpdate, service: TopicSkillServiceDep
+):
+    updated = await service.update_by_topic_and_skill(topic_id, skill_id, data)
+    if not updated:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail='TopicSkill not found'
+        )
+    return TopicSkillPublic.model_validate(updated)
+
+
 @router.delete(
-    '/{topic_id}/skills',
+    '/{topic_id}/skills/{skill_id}',
     status_code=status.HTTP_204_NO_CONTENT,
     dependencies=[Security(require_permission, scopes=['topic_skills:delete'])],
 )
-async def delete_topic_skills(topic_id: UUID, service: TopicSkillServiceDep):
-    await service.delete_by_topic(topic_id)
+async def delete_topic_skill(
+    topic_id: UUID, skill_id: UUID, service: TopicSkillServiceDep
+):
+    deleted = await service.delete_by_topic_and_skill(topic_id, skill_id)
+    if not deleted:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail='TopicSkill not found'
+        )

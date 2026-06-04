@@ -17,8 +17,9 @@ class UserSkillCreate(UserSkillBase):
     pass
 
 
-class UserSkillUpdate(UserSkillCreate):
-    pass
+class UserSkillUpdate(SQLModel):
+    proficiency: Optional[int] = None
+    evidence_url: Optional[str] = None
 
 
 class UserSkillPublic(UserSkillBase, Base):

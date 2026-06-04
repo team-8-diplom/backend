@@ -7,6 +7,7 @@ from app.dependencies.rbac import get_current_user, require_permission
 from app.dependencies.services import UserServiceDep, UserSkillServiceDep
 from app.models import User
 from app.models.pagination import Page
+from app.models.user_skills import UserSkillPublic, UserSkillUpdate
 from app.models.users import UserCreate, UserPublic, UserUpdate
 
 router = APIRouter(prefix='/users', tags=['Users'])
@@ -68,6 +69,42 @@ async def update_user(user_id: UUID, user: UserUpdate, service: UserServiceDep):
             status_code=status.HTTP_404_NOT_FOUND, detail='User not found'
         )
     return UserPublic.model_validate(updated)
+
+
+@router.patch(
+    '/me/skills/{skill_id}',
+    response_model=UserSkillPublic,
+    dependencies=[Security(require_permission, scopes=['user_skills:update'])],
+)
+async def update_my_skill(
+    skill_id: UUID,
+    data: UserSkillUpdate,
+    skill_service: UserSkillServiceDep,
+    current_user: Annotated[User, Depends(get_current_user)],
+):
+    updated = await skill_service.update_by_user_and_skill(current_user.id, skill_id, data)
+    if not updated:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail='UserSkill not found'
+        )
+    return UserSkillPublic.model_validate(updated)
+
+
+@router.delete(
+    '/me/skills/{skill_id}',
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Security(require_permission, scopes=['user_skills:delete'])],
+)
+async def delete_my_skill(
+    skill_id: UUID,
+    skill_service: UserSkillServiceDep,
+    current_user: Annotated[User, Depends(get_current_user)],
+):
+    deleted = await skill_service.delete_by_user_and_skill(current_user.id, skill_id)
+    if not deleted:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail='UserSkill not found'
+        )
 
 
 @router.delete(

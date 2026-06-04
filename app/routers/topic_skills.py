@@ -34,12 +34,12 @@ async def create_topic_skill(
 
 
 @router.get(
-    '/{ts_id}',
+    '/{topic_id}/{skill_id}',
     response_model=TopicSkillPublic,
     dependencies=[Security(require_permission, scopes=['topic_skills:read'])],
 )
-async def get_topic_skill(ts_id: UUID, service: TopicSkillServiceDep):
-    item = await service.get(ts_id)
+async def get_topic_skill(topic_id: UUID, skill_id: UUID, service: TopicSkillServiceDep):
+    item = await service.get_by_topic_and_skill(topic_id, skill_id)
     if not item:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail='TopicSkill not found'
@@ -48,14 +48,14 @@ async def get_topic_skill(ts_id: UUID, service: TopicSkillServiceDep):
 
 
 @router.patch(
-    '/{ts_id}',
+    '/{topic_id}/{skill_id}',
     response_model=TopicSkillPublic,
     dependencies=[Security(require_permission, scopes=['topic_skills:update'])],
 )
 async def update_topic_skill(
-    ts_id: UUID, topic_skill: TopicSkillUpdate, service: TopicSkillServiceDep
+    topic_id: UUID, skill_id: UUID, topic_skill: TopicSkillUpdate, service: TopicSkillServiceDep
 ):
-    updated = await service.update(ts_id, topic_skill)
+    updated = await service.update_by_topic_and_skill(topic_id, skill_id, topic_skill)
     if not updated:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail='TopicSkill not found'
@@ -64,12 +64,12 @@ async def update_topic_skill(
 
 
 @router.delete(
-    '/{ts_id}',
+    '/{topic_id}/{skill_id}',
     status_code=status.HTTP_204_NO_CONTENT,
     dependencies=[Security(require_permission, scopes=['topic_skills:delete'])],
 )
-async def delete_topic_skill(ts_id: UUID, service: TopicSkillServiceDep):
-    deleted = await service.delete(ts_id)
+async def delete_topic_skill(topic_id: UUID, skill_id: UUID, service: TopicSkillServiceDep):
+    deleted = await service.delete_by_topic_and_skill(topic_id, skill_id)
     if not deleted:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail='TopicSkill not found'
