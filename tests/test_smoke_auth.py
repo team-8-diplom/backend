@@ -13,6 +13,8 @@ async def test_register_login_me_refresh_logout(client: AsyncClient):
             'email': 'smoke@example.com',
             'password': 'StrongPass123',
             'role': 'student',
+            'department_id': '00000000-0000-0000-0000-000000000001',
+            'student_card_id': 'SC-SMOKE-001',
         },
     )
     assert resp.status_code == HTTPStatus.CREATED
@@ -56,6 +58,8 @@ async def test_register_duplicate_email(client: AsyncClient):
             'email': 'dup@example.com',
             'password': 'Pass12345',
             'role': 'student',
+            'department_id': '00000000-0000-0000-0000-000000000001',
+            'student_card_id': 'SC-DUP-001',
         },
     )
     assert resp.status_code == HTTPStatus.CREATED
@@ -68,6 +72,8 @@ async def test_register_duplicate_email(client: AsyncClient):
             'email': 'dup@example.com',
             'password': 'Other12345',
             'role': 'student',
+            'department_id': '00000000-0000-0000-0000-000000000001',
+            'student_card_id': 'SC-DUP-002',
         },
     )
     assert resp.status_code == HTTPStatus.BAD_REQUEST
@@ -82,6 +88,8 @@ async def test_login_wrong_password(client: AsyncClient):
             'email': 'wrong@example.com',
             'password': 'CorrectPass',
             'role': 'student',
+            'department_id': '00000000-0000-0000-0000-000000000001',
+            'student_card_id': 'SC-WRONG-001',
         },
     )
     assert resp.status_code == HTTPStatus.CREATED

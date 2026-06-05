@@ -17,9 +17,11 @@ from app.dependencies.services import (
     EmailNotificationServiceDep,
     RefreshSessionServiceDep,
     RoleServiceDep,
+    StudentServiceDep,
+    TeacherServiceDep,
     UserServiceDep,
 )
-from app.models import AccessTokenResponse, MessageResponse, UserPublic
+from app.models import AccessTokenResponse, MessageResponse, User, UserPublic
 from app.models.auth import (
     ConfirmAccountRequest,
     LoginRequest,
@@ -27,6 +29,17 @@ from app.models.auth import (
     PasswordResetRequest,
     RegisterRequest,
 )
+from app.models.students import StudentCreate
+from app.models.teachers import TeacherCreate
+
+
+def _build_user_public(user: User) -> UserPublic:
+    role = next(
+        (r.name for r in user.roles if r.name in ('student', 'teacher')),
+        None,
+    )
+    return UserPublic.model_validate(user).model_copy(update={'role': role})
+
 
 router = APIRouter(prefix='/auth', tags=['Authentication'])
 
@@ -41,6 +54,8 @@ async def register(
     user_service: UserServiceDep,
     role_service: RoleServiceDep,
     email_service: EmailNotificationServiceDep,
+    student_service: StudentServiceDep,
+    teacher_service: TeacherServiceDep,
 ):
     created_user = await service.register(user_data, user_service)
     await service.send_confirmation(created_user, email_service, background_tasks)
@@ -52,7 +67,30 @@ async def register(
     requested_role = await role_service.get_by_name(user_data.role)
     if requested_role and (not public_role or requested_role.id != public_role.id):
         await role_service.assign_role_to_user(created_user.id, requested_role.id)
-    return UserPublic.model_validate(created_user)
+
+    if user_data.role == 'student':
+        await student_service.create(
+            StudentCreate(
+                first_name=user_data.first_name,
+                last_name=user_data.last_name,
+                student_card_id=user_data.student_card_id,
+                department_id=user_data.department_id,
+            ),
+            user_id=created_user.id,
+        )
+    else:
+        await teacher_service.create(
+            TeacherCreate(
+                first_name=user_data.first_name,
+                last_name=user_data.last_name,
+                position=user_data.position,
+                department_id=user_data.department_id,
+            ),
+            user_id=created_user.id,
+        )
+
+    user = await user_service.get(created_user.id)
+    return _build_user_public(user)
 
 
 @router.post('/login', response_model=AccessTokenResponse)
@@ -125,7 +163,7 @@ async def get_current_user(
     user_service: UserServiceDep,
 ):
     current_user = await service.get_current_user(token, user_service)
-    return UserPublic.model_validate(current_user)
+    return _build_user_public(current_user)
 
 
 @router.post('/logout', response_model=MessageResponse)

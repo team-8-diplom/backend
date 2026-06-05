@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING, List, Optional, Set
+from typing import TYPE_CHECKING, List, Literal, Optional, Set
 
 from pydantic import EmailStr, computed_field
 from sqlmodel import Field, Relationship, SQLModel
@@ -32,6 +32,7 @@ class UserUpdate(SQLModel):
 
 class UserPublic(Base, UserBase):
     created_at: datetime
+    role: Optional[Literal['student', 'teacher']] = None
 
 
 class User(Base, UserBase, table=True):

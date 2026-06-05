@@ -6,7 +6,6 @@ from .base import Base
 
 
 class TeacherBase(SQLModel):
-    user_id: UUID = Field(foreign_key='users.id', unique=True)
     first_name: str
     last_name: str
     position: str
@@ -22,7 +21,7 @@ class TeacherUpdate(TeacherCreate):
 
 
 class TeacherPublic(TeacherBase, Base):
-    pass
+    user_id: UUID = Field(foreign_key='users.id', unique=True)
 
 
 class Teacher(TeacherPublic, table=True):

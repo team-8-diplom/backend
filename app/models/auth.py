@@ -1,6 +1,7 @@
 from typing import Literal, Optional
+from uuid import UUID
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, model_validator
 
 
 class RegisterRequest(BaseModel):
@@ -9,6 +10,17 @@ class RegisterRequest(BaseModel):
     email: EmailStr
     password: str
     role: Literal['student', 'teacher'] = 'student'
+    department_id: UUID
+    student_card_id: Optional[str] = None
+    position: Optional[str] = None
+
+    @model_validator(mode='after')
+    def validate_role_fields(self) -> 'RegisterRequest':
+        if self.role == 'student' and not self.student_card_id:
+            raise ValueError('student_card_id is required for role "student"')
+        if self.role == 'teacher' and not self.position:
+            raise ValueError('position is required for role "teacher"')
+        return self
 
 
 class AccessTokenResponse(BaseModel):
